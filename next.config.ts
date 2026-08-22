@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
     "@firebase/app",
     "google-auth-library",
     "googleapis-common",
+    "jose",
+    "jwks-rsa",
   ],
 };
 
