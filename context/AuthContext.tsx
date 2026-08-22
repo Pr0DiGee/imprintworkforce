@@ -21,12 +21,15 @@ interface AuthContextValue {
   userProfile: UserProfile | null;
   /** True while the initial auth state is being resolved */
   loading: boolean;
+  /** Re-fetch the Firestore profile (e.g. after admin changes role) */
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   userProfile: null,
   loading: true,
+  refreshProfile: async () => {},
 });
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -51,6 +54,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const refreshProfile = useCallback(async () => {
+    if (user) {
+      await fetchProfile(user);
+    }
+  }, [user, fetchProfile]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
@@ -67,8 +76,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, [fetchProfile]);
 
+  // Periodic soft refresh every 5 minutes to pick up role changes
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      fetchProfile(user);
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [user, fetchProfile]);
+
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

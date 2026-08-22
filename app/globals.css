@@ -1,26 +1,247 @@
 @import "tailwindcss";
 
+/* ─── Dark mode: class-based toggle ────────────────────────────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Design tokens (Mockup Palette) ─────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces */
+  --bg-page: #fbfaf7;      /* --paper */
+  --bg-card: #ffffff;      /* --card */
+  --bg-card-hover: #f2f1eb;/* --muted-bg */
+  --bg-sidebar: #ffffff;
+  --bg-input: #ffffff;
+  --bg-elevated: #fbfaf7;
+  --bg-muted: #f2f1eb;     /* --muted-bg */
+
+  /* Borders */
+  --border-primary: #e3e1da; /* --line */
+  --border-subtle: #c9c7bd;  /* --line-strong */
+
+  /* Text */
+  --text-primary: #1c1c1a;   /* --ink */
+  --text-secondary: #5c5b56; /* --ink-soft */
+  --text-muted: #8c8b85;     /* --ink-faint */
+  --text-inverse: #ffffff;
+
+  /* Accents */
+  --accent: #2f5d4f;
+  --accent-hover: #214339;
+  --accent-subtle: #eaf1ee;
+  --accent-text: #2f5d4f;
+
+  /* Status */
+  --success: #2f5d4f;
+  --success-subtle: #eaf1ee;
+  --warning: #8a5a12;
+  --warning-subtle: #fbf1de;
+  --danger: #9c3b32;
+  --danger-subtle: #faeae7;
+
+  /* Misc */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+  --radius: 10px;
+}
+
+.dark {
+  /* Surfaces */
+  --bg-page: #121212;
+  --bg-card: #1c1c1c;
+  --bg-card-hover: #262626;
+  --bg-sidebar: #1c1c1c;
+  --bg-input: #1c1c1c;
+  --bg-elevated: #262626;
+  --bg-muted: #262626;
+
+  /* Borders */
+  --border-primary: #333333;
+  --border-subtle: #4d4d4d;
+
+  /* Text */
+  --text-primary: #fbfaf7;
+  --text-secondary: #c9c7bd;
+  --text-muted: #8c8b85;
+  --text-inverse: #1c1c1a;
+
+  /* Accents */
+  --accent: #4ade80;
+  --accent-hover: #22c55e;
+  --accent-subtle: #14532d;
+  --accent-text: #4ade80;
+
+  /* Status */
+  --success: #4ade80;
+  --success-subtle: #14532d;
+  --warning: #fbbf24;
+  --warning-subtle: #78350f;
+  --danger: #f87171;
+  --danger-subtle: #7f1d1d;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg-page);
+  --color-foreground: var(--text-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ─── Global input styles ──────────────────────────────────────────────────── */
+input, textarea, select {
+  color: var(--text-primary) !important;
+  background: var(--bg-input) !important;
+  border-color: var(--border-primary) !important;
+  border-radius: 7px;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Mockup Specific Utility Classes */
+.badge {
+  font-size: 11.5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge.ok { background: var(--success-subtle); color: var(--success); }
+.badge.warn { background: var(--warning-subtle); color: var(--warning); }
+.badge.off { background: var(--bg-muted); color: var(--text-muted); }
+
+.date-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 22px;
+}
+.date-chip {
+  flex: 0 0 auto;
+  min-width: 64px;
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  cursor: pointer;
+}
+.date-chip .dow { font-size: 10.5px; color: var(--text-secondary); }
+.date-chip .num { font-size: 16px; font-weight: 600; margin: 2px 0; color: var(--text-primary); }
+.date-chip .mon { font-size: 10.5px; color: var(--text-secondary); }
+.date-chip.selected { background: var(--accent); border-color: var(--accent); }
+.date-chip.selected .dow, .date-chip.selected .num, .date-chip.selected .mon { color: var(--text-inverse); }
+.date-chip.unplanned { opacity: 0.55; }
+
+
+/* ─── Tiptap editor content styles ─────────────────────────────────────────── */
+.tiptap-content:focus {
+  outline: none;
+}
+
+.tiptap-content h2 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 1.25rem 0 0.5rem;
+  color: var(--text-primary);
+}
+
+.tiptap-content h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1rem 0 0.4rem;
+  color: var(--text-primary);
+}
+
+.tiptap-content p {
+  margin-bottom: 0.75rem;
+  line-height: 1.65;
+  color: var(--text-primary);
+}
+
+.tiptap-content p:last-child {
+  margin-bottom: 0;
+}
+
+.tiptap-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.tiptap-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.tiptap-content li {
+  margin-bottom: 0.2rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.tiptap-content strong {
+  font-weight: 700;
+}
+
+.tiptap-content em {
+  font-style: italic;
+}
+
+.tiptap-content p.is-editor-empty:first-child::before {
+  color: var(--text-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* ─── Skeleton animation ───────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--border-subtle) 25%, var(--bg-card-hover) 50%, var(--border-subtle) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius);
+}
+
+/* ─── Toast animation ──────────────────────────────────────────────────────── */
+@keyframes toast-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes toast-out {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+.toast-enter { animation: toast-in 0.3s ease-out forwards; }
+.toast-exit { animation: toast-out 0.3s ease-in forwards; }
+
+/* ─── Print styles ─────────────────────────────────────────────────────────── */
+@media print {
+  body { background: white !important; color: black !important; }
+  aside, .no-print, .toast-container { display: none !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+  .print-full-width { max-width: 100% !important; width: 100% !important; }
 }

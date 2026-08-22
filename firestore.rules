@@ -1,0 +1,126 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper functions ──────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(uid())).data;
+    }
+
+    function isLeadPastor() {
+      return isAuth() && userDoc().role == 'LEAD_PASTOR';
+    }
+
+    function isPastorPlus() {
+      return isAuth() && userDoc().role in ['PASTOR', 'LEAD_PASTOR'];
+    }
+
+    function canEditDevotion() {
+      return isAuth() && userDoc().role in ['DEVOTION_LEAD', 'PASTOR', 'LEAD_PASTOR'];
+    }
+
+    // ─── Users ─────────────────────────────────────────────────────────
+    match /users/{userId} {
+      // Any authenticated user can read any user profile (needed for name lookups)
+      allow read: if isAuth();
+
+      // Users can update their OWN profile, but CANNOT change their own role or departments
+      allow update: if isAuth() && uid() == userId
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'departments']);
+
+      // Lead Pastor can create/update/delete any user (role assignments, department changes)
+      allow write: if isLeadPastor();
+    }
+
+    // ─── Reports ───────────────────────────────────────────────────────
+    match /reports/{reportId} {
+      // Any authenticated user can read reports
+      allow read: if isAuth();
+
+      // Pastors can write any report
+      allow write: if isPastorPlus();
+
+      // Workers can only write reports for their own department
+      // Report ID format: DEPARTMENT_YYYY-MM-DD
+      allow create, update: if isAuth()
+                            && resource == null
+                               ? request.resource.data.department in userDoc().departments
+                               : resource.data.department in userDoc().departments;
+    }
+
+    // ─── Tasks ─────────────────────────────────────────────────────────
+    match /tasks/{taskId} {
+      // Pastors can read all tasks; workers can read tasks assigned to them
+      allow read: if isPastorPlus()
+                  || (isAuth() && resource.data.assigned_to == uid());
+
+      // Pastors can create and delete tasks
+      allow create, delete: if isPastorPlus();
+
+      // Pastors can update any task; assignee can only update the status field
+      allow update: if isPastorPlus()
+                    || (isAuth()
+                        && resource.data.assigned_to == uid()
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+    }
+
+    // ─── Roster ────────────────────────────────────────────────────────
+    match /roster/{entry} {
+      // Any authenticated user can read roster
+      allow read: if isAuth();
+
+      // Only pastors can write roster assignments
+      allow write: if isPastorPlus();
+    }
+
+    // ─── Devotion ──────────────────────────────────────────────────────
+    match /devotion/{entry} {
+      // Any authenticated user can read devotion schedule
+      allow read: if isAuth();
+
+      // Only devotion leads and pastors can write
+      allow write: if canEditDevotion();
+    }
+
+    // ─── Feedback ──────────────────────────────────────────────────────
+    match /feedback/{feedbackId} {
+      // Any authenticated user can read all feedback
+      allow read: if isAuth();
+
+      // Users can only write their own feedback doc (ID format: YYYY-MM-DD_UID)
+      allow create, update: if isAuth()
+                            && feedbackId.matches('.*_' + uid())
+                            && request.resource.data.user_id == uid();
+    }
+
+    // ─── Congregation (public check-in) ────────────────────────────────
+    match /congregation/{memberId} {
+      // No auth required for writes (public check-in kiosk)
+      allow create: if true;
+      allow update: if true;
+
+      // Only pastors can read congregation data
+      allow read: if isPastorPlus();
+    }
+
+    // ─── Attendance ────────────────────────────────────────────────────
+    match /attendance/{recordId} {
+      // No auth required for creates (public check-in)
+      allow create: if true;
+
+      // Only pastors can read attendance records
+      allow read: if isPastorPlus();
+
+      // No updates or deletes on attendance records
+      allow update, delete: if false;
+    }
+  }
+}
