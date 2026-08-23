@@ -22,6 +22,7 @@ function getInitials(name: string): string {
 interface AvatarProps {
   name: string;
   uid?: string;
+  photoUrl?: string;
   size?: "sm" | "md" | "lg";
 }
 
@@ -31,7 +32,18 @@ const SIZES = {
   lg: "w-10 h-10 text-sm",
 };
 
-export function Avatar({ name, uid = name, size = "md" }: AvatarProps) {
+export function Avatar({ name, uid = name, photoUrl, size = "md" }: AvatarProps) {
+  if (photoUrl) {
+    return (
+      <img
+        src={photoUrl}
+        alt={name}
+        className={`${SIZES[size]} rounded-full object-cover shrink-0 select-none`}
+        title={name}
+      />
+    );
+  }
+
   return (
     <div
       className={`${SIZES[size]} ${getColor(uid)} rounded-full flex items-center justify-center text-white font-semibold shrink-0 select-none`}

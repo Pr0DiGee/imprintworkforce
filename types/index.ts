@@ -62,6 +62,8 @@ export interface UserProfile {
   departments: Department[];
   /** @deprecated Use `departments` array instead. Kept for migration compatibility. */
   department?: Department | "";
+  /** Profile picture URL */
+  photo_url?: string;
 }
 
 export type ReportStatus = "DRAFT" | "SUBMITTED";

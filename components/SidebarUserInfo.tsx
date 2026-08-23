@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { Avatar } from "@/components/Avatar";
+import Link from "next/link";
 
 export function SidebarUserInfo() {
   const { userProfile, loading } = useAuth();
@@ -13,8 +14,8 @@ export function SidebarUserInfo() {
   if (!userProfile) return null;
 
   return (
-    <div className="flex items-center gap-2.5">
-      <Avatar name={userProfile.name} uid={userProfile.uid} size="md" />
+    <Link href="/dashboard/profile" className="flex items-center gap-2.5 p-2 -mx-2 rounded-lg hover:bg-[var(--bg-muted)] transition-colors">
+      <Avatar name={userProfile.name} uid={userProfile.uid} photoUrl={userProfile.photo_url} size="md" />
       <div className="min-w-0 flex-1">
         <p
           className="text-xs font-semibold truncate"
@@ -31,6 +32,6 @@ export function SidebarUserInfo() {
           {userProfile.email}
         </p>
       </div>
-    </div>
+    </Link>
   );
 }
