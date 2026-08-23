@@ -15,7 +15,8 @@ export function proxy(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
-    pathname === "/"
+    pathname === "/" ||
+    pathname === "/logo.png"
   ) {
     return NextResponse.next();
   }
@@ -39,7 +40,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization)
      * - favicon.ico
+     * - logo.png
      */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|logo.png).*)",
   ],
 };
