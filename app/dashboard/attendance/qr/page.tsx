@@ -32,8 +32,11 @@ export default async function AttendanceQRPage() {
       </div>
 
       <div className="border rounded-2xl p-12 inline-block shadow-sm" style={{ background: "var(--bg-card)", borderColor: "var(--border-primary)" }}>
+        <div className="flex justify-center mb-6">
+          <img src="/logo.png" alt="Imprint Global Church" className="w-24 h-24 object-contain" />
+        </div>
         <h1 className="text-4xl font-black tracking-tight mb-2 text-center" style={{ color: "var(--text-primary)" }}>
-          Welcome to Imprint
+          Welcome to Imprint Global Church
         </h1>
         <p className="text-lg text-center mb-10" style={{ color: "var(--text-secondary)" }}>
           Scan this code to check in for today's service

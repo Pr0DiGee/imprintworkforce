@@ -25,10 +25,10 @@
   --text-inverse: #ffffff;
 
   /* Accents */
-  --accent: #2f5d4f;
-  --accent-hover: #214339;
-  --accent-subtle: #eaf1ee;
-  --accent-text: #2f5d4f;
+  --accent: #b91c1c;       /* A darker, non-screaming red */
+  --accent-hover: #991b1b;
+  --accent-subtle: #fef2f2;
+  --accent-text: #b91c1c;
 
   /* Status */
   --success: #2f5d4f;
@@ -66,10 +66,10 @@
   --text-inverse: #1c1c1a;
 
   /* Accents */
-  --accent: #4ade80;
-  --accent-hover: #22c55e;
-  --accent-subtle: #14532d;
-  --accent-text: #4ade80;
+  --accent: #ef4444;
+  --accent-hover: #f87171;
+  --accent-subtle: #450a0a;
+  --accent-text: #ef4444;
 
   /* Status */
   --success: #4ade80;

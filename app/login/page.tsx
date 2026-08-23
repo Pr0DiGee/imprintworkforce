@@ -293,17 +293,15 @@ export default function LoginPage() {
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3" />
         
         <div className="relative z-10">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6" style={{ background: "var(--accent)", color: "white" }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight mb-2">Church Resource Planning</h1>
+          <img src="/logo.png" alt="Imprint Global Church" className="w-16 h-16 mb-4 object-contain" />
+          <h1 className="text-4xl font-bold tracking-tight mb-2">Imprint Workforce</h1>
           <p className="text-lg opacity-80 max-w-md leading-relaxed">
             A unified platform for managing reports, tasks, devotions, and service feedback.
           </p>
         </div>
         
         <div className="relative z-10 text-sm font-medium opacity-60">
-          © {new Date().getFullYear()} Church Admin Portal.
+          © {new Date().getFullYear()} Imprint Global Church.
         </div>
       </div>
 
@@ -311,11 +309,9 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6 md:p-12 relative min-h-screen md:min-h-0">
         
         {/* Mobile Branding */}
-        <div className="md:hidden absolute top-8 left-8 right-8 text-center">
-          <div className="w-10 h-10 mx-auto rounded-xl flex items-center justify-center mb-4" style={{ background: "var(--accent)", color: "white" }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-          </div>
-          <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>Church Resource Planning</h1>
+        <div className="mb-8 md:hidden flex items-center gap-3">
+          <img src="/logo.png" alt="Imprint Global Church" className="w-10 h-10 object-contain" />
+          <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>Imprint Workforce</h1>
         </div>
 
         <div className="w-full max-w-md pt-20 md:pt-0">

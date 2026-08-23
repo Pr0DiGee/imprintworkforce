@@ -84,7 +84,7 @@ export function CheckInClient({ initialMember, targetSunday }: CheckInClientProp
         <button
           onClick={() => {
             setSuccess(false);
-            setMember(null);
+            setMember({ name: "", phone: "", email: "", address: "", birthday: "" });
           }}
           className="text-sm font-medium text-[var(--accent)] hover:opacity-80"
         >
@@ -150,22 +150,28 @@ export function CheckInClient({ initialMember, targetSunday }: CheckInClientProp
     <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-6 shadow-sm">
       {member?.id ? (
         <div className="mb-6 p-4 rounded-lg bg-[var(--accent-subtle)] border border-[var(--accent)] text-center">
+          <div className="flex justify-center mb-4">
+            <img src="/logo.png" alt="Imprint Global Church" className="w-16 h-16 object-contain" />
+          </div>
           <p className="text-sm text-[var(--text-secondary)] mb-1">Welcome back,</p>
           <h2 className="text-xl font-bold text-[var(--accent-text)]">{member.name}</h2>
           <button
             onClick={() => setMember({ name: "", phone: "", email: "", address: "", birthday: "" })}
-            className="text-xs mt-2 text-[var(--text-secondary)] hover:underline"
+            className="text-sm font-medium mt-3 text-[var(--accent)] hover:opacity-80"
           >
-            Not you? Change details
+            Check in someone else instead
           </button>
         </div>
       ) : (
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Digital Connect Card</h2>
-          <p className="text-sm text-[var(--text-secondary)]">Please fill in your details to check in.</p>
+        <div className="mb-6 text-center">
+          <div className="flex justify-center mb-4">
+            <img src="/logo.png" alt="Imprint Global Church" className="w-16 h-16 object-contain" />
+          </div>
+          <h2 className="text-lg font-bold text-[var(--text-primary)]">Imprint Global Church</h2>
+          <p className="text-sm text-[var(--text-secondary)] mb-4">Please fill in your details to check in.</p>
           <button
             onClick={() => setIsLookingUp(true)}
-            className="text-sm font-medium text-[var(--accent)] mt-2 hover:opacity-80"
+            className="text-sm font-medium text-[var(--accent)] hover:opacity-80"
           >
             Already been here? Find by phone
           </button>

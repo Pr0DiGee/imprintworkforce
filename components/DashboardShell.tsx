@@ -18,11 +18,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           borderRight: "1px solid var(--border-primary)",
         }}
       >
-        <div className="px-4 py-5" style={{ borderBottom: "1px solid var(--border-primary)" }}>
+        <div className="px-4 py-5 flex items-center gap-2" style={{ borderBottom: "1px solid var(--border-primary)" }}>
+          <img src="/logo.png" alt="Imprint Global Church" className="w-8 h-8 object-contain" />
           <h1 className="text-base font-bold leading-tight" style={{ color: "var(--text-primary)" }}>
-            Church Resource
+            Imprint
             <br />
-            <span style={{ color: "var(--accent)" }}>Planning</span>
+            <span style={{ color: "var(--accent)" }}>Workforce</span>
           </h1>
         </div>
 
@@ -42,9 +43,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           borderBottom: "1px solid var(--border-primary)",
         }}
       >
-        <h1 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-          CRP
-        </h1>
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="Imprint Global Church" className="w-6 h-6 object-contain" />
+          <h1 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+            Imprint Workforce
+          </h1>
+        </div>
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
@@ -75,11 +79,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             }}
           >
             <div className="px-4 py-5 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border-primary)" }}>
-              <h1 className="text-base font-bold leading-tight" style={{ color: "var(--text-primary)" }}>
-                Church Resource
-                <br />
-                <span style={{ color: "var(--accent)" }}>Planning</span>
-              </h1>
+              <div className="flex items-center gap-2">
+                <img src="/logo.png" alt="Imprint Global Church" className="w-8 h-8 object-contain" />
+                <h1 className="text-base font-bold leading-tight" style={{ color: "var(--text-primary)" }}>
+                  Imprint
+                  <br />
+                  <span style={{ color: "var(--accent)" }}>Workforce</span>
+                </h1>
+              </div>
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}

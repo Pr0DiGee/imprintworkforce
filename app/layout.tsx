@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Church Resource Planning",
+  title: "Imprint Workforce",
   description: "Internal management portal for church operations",
 };
 
