@@ -171,3 +171,27 @@ export interface Note {
   created_at?: Timestamp;
   updated_at?: Timestamp;
 }
+
+// ─── Follow-Up ───────────────────────────────────────────────────────────────
+
+export type FollowUpMethod = "PHYSICAL" | "CALL" | "TEXT";
+
+export interface FollowUpContact {
+  id?: string;
+  name: string;
+  phone: string;
+  address?: string;
+  assigned_to: string; // uid of the worker
+  created_at?: Timestamp;
+}
+
+export interface FollowUpLog {
+  id?: string;
+  contact_id: string;
+  worker_id: string; // UID of the worker who logged it
+  method: FollowUpMethod;
+  notes?: string;
+  /** ISO date string of the current target Sunday to track weekly completion e.g. "2026-08-23" */
+  target_sunday: string;
+  logged_at?: Timestamp;
+}

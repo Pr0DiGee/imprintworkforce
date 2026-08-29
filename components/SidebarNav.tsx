@@ -12,6 +12,7 @@ import {
   BookOpen,
   MessageSquare,
   StickyNote,
+  UserCheck,
   Settings,
   Sun,
   Moon
@@ -25,6 +26,7 @@ const CORE_LINKS = [
   { href: "/dashboard/roster", id: "nav-roster", label: "Roster", icon: ClipboardList },
   { href: "/dashboard/devotion", id: "nav-devotion", label: "Devotion", icon: BookOpen },
   { href: "/dashboard/feedback", id: "nav-feedback", label: "Feedback", icon: MessageSquare },
+  { href: "/dashboard/followup", id: "nav-followup", label: "Follow-Up", icon: UserCheck },
   { href: "/dashboard/notes", id: "nav-notes", label: "Notes", icon: StickyNote },
 ];
 

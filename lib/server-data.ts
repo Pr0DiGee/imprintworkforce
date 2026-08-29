@@ -16,6 +16,8 @@ import type {
   ROSTER_DUTIES,
   NoteFolder,
   Note,
+  FollowUpContact,
+  FollowUpLog,
 } from "@/types";
 import { isPastor, isLeadPastor } from "@/lib/roles";
 
@@ -255,5 +257,23 @@ export async function fetchAllNotesForUser(userId: string): Promise<Note[]> {
     .orderBy("updated_at", "desc")
     .get();
   return snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as Note));
+}
+
+// ─── Follow-Up ─────────────────────────────────────────────────────────────────
+
+export async function fetchFollowUpContacts(): Promise<FollowUpContact[]> {
+  const snap = await db()
+    .collection("followup_contacts")
+    .orderBy("created_at", "desc")
+    .get();
+  return snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as FollowUpContact));
+}
+
+export async function fetchFollowUpLogs(): Promise<FollowUpLog[]> {
+  const snap = await db()
+    .collection("followup_logs")
+    .orderBy("logged_at", "desc")
+    .get();
+  return snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as FollowUpLog));
 }
 

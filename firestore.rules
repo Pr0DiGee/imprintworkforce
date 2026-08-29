@@ -139,5 +139,23 @@ service cloud.firestore {
         : resource.data.user_id == uid();
       allow create: if isAuth() && request.resource.data.user_id == uid();
     }
+
+    // ─── Follow-Up ─────────────────────────────────────────────────────
+    match /followup_contacts/{contactId} {
+      // All authenticated users can read the global list
+      allow read: if isAuth();
+      // Any authenticated user can create a contact
+      allow create: if isAuth();
+      // Users can only update or delete contacts they are assigned to (or pastors)
+      allow update, delete: if isAuth() && (resource.data.assigned_to == uid() || isPastorPlus());
+    }
+
+    match /followup_logs/{logId} {
+      // All authenticated users can read logs
+      allow read: if isAuth();
+      // A user can only log for themselves
+      allow create: if isAuth() && request.resource.data.worker_id == uid();
+      allow update, delete: if isAuth() && resource.data.worker_id == uid();
+    }
   }
 }
