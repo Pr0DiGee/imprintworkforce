@@ -122,5 +122,22 @@ service cloud.firestore {
       // No updates or deletes on attendance records
       allow update, delete: if false;
     }
+
+    // ─── Worker Notes (Private) ──────────────────────────────────────
+    match /note_folders/{folderId} {
+      // Users can only read/write their own folders
+      allow read, write: if isAuth() && resource == null
+        ? request.resource.data.user_id == uid()
+        : resource.data.user_id == uid();
+      allow create: if isAuth() && request.resource.data.user_id == uid();
+    }
+
+    match /notes/{noteId} {
+      // Users can only read/write their own notes
+      allow read, write: if isAuth() && resource == null
+        ? request.resource.data.user_id == uid()
+        : resource.data.user_id == uid();
+      allow create: if isAuth() && request.resource.data.user_id == uid();
+    }
   }
 }

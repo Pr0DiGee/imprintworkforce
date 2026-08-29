@@ -11,6 +11,7 @@ import {
   ClipboardList,
   BookOpen,
   MessageSquare,
+  StickyNote,
   Settings,
   Sun,
   Moon
@@ -24,6 +25,7 @@ const CORE_LINKS = [
   { href: "/dashboard/roster", id: "nav-roster", label: "Roster", icon: ClipboardList },
   { href: "/dashboard/devotion", id: "nav-devotion", label: "Devotion", icon: BookOpen },
   { href: "/dashboard/feedback", id: "nav-feedback", label: "Feedback", icon: MessageSquare },
+  { href: "/dashboard/notes", id: "nav-notes", label: "Notes", icon: StickyNote },
 ];
 
 function isActive(pathname: string, href: string): boolean {

@@ -14,6 +14,8 @@ import type {
   Department,
   RosterDuty,
   ROSTER_DUTIES,
+  NoteFolder,
+  Note,
 } from "@/types";
 import { isPastor, isLeadPastor } from "@/lib/roles";
 
@@ -221,3 +223,37 @@ export async function fetchDashboardStats(
     feedbackCount: feedback.length,
   };
 }
+
+// ─── Worker Notes ──────────────────────────────────────────────────────────────
+
+export async function fetchNoteFolders(userId: string): Promise<NoteFolder[]> {
+  const snap = await db()
+    .collection("note_folders")
+    .where("user_id", "==", userId)
+    .orderBy("created_at", "desc")
+    .get();
+  return snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as NoteFolder));
+}
+
+export async function fetchNotesForFolder(
+  userId: string,
+  folderId: string
+): Promise<Note[]> {
+  const snap = await db()
+    .collection("notes")
+    .where("user_id", "==", userId)
+    .where("folder_id", "==", folderId)
+    .orderBy("updated_at", "desc")
+    .get();
+  return snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as Note));
+}
+
+export async function fetchAllNotesForUser(userId: string): Promise<Note[]> {
+  const snap = await db()
+    .collection("notes")
+    .where("user_id", "==", userId)
+    .orderBy("updated_at", "desc")
+    .get();
+  return snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as Note));
+}
+

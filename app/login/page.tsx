@@ -156,7 +156,7 @@ function SignUpForm() {
           name: name.trim(),
           email: email.toLowerCase().trim(),
           role: "WORKER",
-          department: "",
+          departments: [],
           created_at: serverTimestamp(),
         });
       } catch (firestoreErr: unknown) {

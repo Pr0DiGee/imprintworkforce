@@ -148,3 +148,26 @@ export interface AttendanceRecord {
   service_date: string; // ISO Sunday string
   checked_in_at?: Timestamp;
 }
+
+// ─── Worker Notes (Private, iOS-style folders) ───────────────────────────────
+
+export interface NoteFolder {
+  id?: string;
+  user_id: string;
+  name: string;
+  /** Optional color tag for the folder */
+  color?: string;
+  created_at?: Timestamp;
+  updated_at?: Timestamp;
+}
+
+export interface Note {
+  id?: string;
+  user_id: string;
+  folder_id: string;
+  title: string;
+  /** Stringified Tiptap JSON document */
+  content: string;
+  created_at?: Timestamp;
+  updated_at?: Timestamp;
+}
