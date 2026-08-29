@@ -156,6 +156,10 @@ service cloud.firestore {
       // A user can only log for themselves
       allow create: if isAuth() && request.resource.data.worker_id == uid();
       allow update, delete: if isAuth() && resource.data.worker_id == uid();
+    // ─── EVANGELISM ────────────────────────────────────────────────────────────
+    match /evangelism_contacts/{contactId} {
+      // Anyone authenticated can read and write evangelism contacts globally
+      allow read, write: if isAuth();
     }
   }
 }

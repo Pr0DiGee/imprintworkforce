@@ -31,6 +31,7 @@ export async function processCheckIn(formData: FormData, targetSunday: string) {
         birthday: birthday || null,
         address: address || null,
         last_checkin: now,
+        attendance_count: FieldValue.increment(1),
       });
     } else {
       // Check if phone already exists
@@ -45,6 +46,7 @@ export async function processCheckIn(formData: FormData, targetSunday: string) {
           birthday: birthday || null,
           address: address || null,
           last_checkin: now,
+          attendance_count: FieldValue.increment(1),
         });
       } else {
         // Create new member
@@ -58,6 +60,7 @@ export async function processCheckIn(formData: FormData, targetSunday: string) {
           address: address || null,
           created_at: now,
           last_checkin: now,
+          attendance_count: 1,
         });
       }
     }

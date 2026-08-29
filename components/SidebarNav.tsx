@@ -15,7 +15,8 @@ import {
   UserCheck,
   Settings,
   Sun,
-  Moon
+  Moon,
+  MapPin
 } from "lucide-react";
 import React from "react";
 
@@ -26,6 +27,7 @@ const CORE_LINKS = [
   { href: "/dashboard/roster", id: "nav-roster", label: "Roster", icon: ClipboardList },
   { href: "/dashboard/devotion", id: "nav-devotion", label: "Devotion", icon: BookOpen },
   { href: "/dashboard/feedback", id: "nav-feedback", label: "Feedback", icon: MessageSquare },
+  { href: "/dashboard/evangelism", id: "nav-evangelism", label: "Evangelism", icon: MapPin },
   { href: "/dashboard/followup", id: "nav-followup", label: "Follow-Up", icon: UserCheck },
   { href: "/dashboard/notes", id: "nav-notes", label: "Notes", icon: StickyNote },
 ];

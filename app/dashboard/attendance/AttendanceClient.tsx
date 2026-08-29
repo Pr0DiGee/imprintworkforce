@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CongregationMember, AttendanceRecord } from "@/types";
 import { formatTargetSunday } from "@/lib/sunday";
 import Link from "next/link";
-import { Users, Search, QrCode } from "lucide-react";
+import { Users, Search, QrCode, Filter } from "lucide-react";
 
 interface AttendanceClientProps {
   members: CongregationMember[];
@@ -14,22 +14,33 @@ interface AttendanceClientProps {
 
 export function AttendanceClient({ members, todayAttendance, currentSunday }: AttendanceClientProps) {
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"ALL" | "FIRST_TIMER" | "SECOND_TIMER" | "REGULAR">("ALL");
 
   const checkedInIds = new Set(todayAttendance.map(a => a.member_id));
 
-  // Determine if a member is new (created within the last 7 days)
-  const isNew = (member: CongregationMember) => {
-    if (!member.created_at) return false;
+  const getVisitorStatus = (member: CongregationMember): "FIRST_TIMER" | "SECOND_TIMER" | "REGULAR" => {
+    if (member.attendance_count !== undefined) {
+      if (member.attendance_count <= 1) return "FIRST_TIMER";
+      if (member.attendance_count === 2) return "SECOND_TIMER";
+      return "REGULAR";
+    }
+    // Fallback logic for legacy members without attendance_count
+    if (!member.created_at) return "REGULAR";
     const createdAt = new Date(member.created_at as unknown as string);
     const now = new Date();
-    const diff = now.getTime() - createdAt.getTime();
-    return diff < 7 * 24 * 60 * 60 * 1000;
+    const diffDays = (now.getTime() - createdAt.getTime()) / (1000 * 3600 * 24);
+    if (diffDays <= 7) return "FIRST_TIMER";
+    if (diffDays <= 14) return "SECOND_TIMER";
+    return "REGULAR";
   };
 
-  const filteredMembers = members.filter(m => 
-    m.name.toLowerCase().includes(search.toLowerCase()) || 
-    m.phone.includes(search)
-  ).sort((a, b) => {
+  const filteredMembers = members.filter(m => {
+    const matchesSearch = m.name.toLowerCase().includes(search.toLowerCase()) || m.phone.includes(search);
+    if (!matchesSearch) return false;
+    
+    if (filter === "ALL") return true;
+    return getVisitorStatus(m) === filter;
+  }).sort((a, b) => {
     // Sort checked in first, then by name
     const aChecked = checkedInIds.has(a.id!);
     const bChecked = checkedInIds.has(b.id!);
@@ -41,7 +52,7 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
   const checkedInCount = todayAttendance.length;
   const newCount = todayAttendance.filter(a => {
     const m = members.find(m => m.id === a.member_id);
-    return m ? isNew(m) : false;
+    return m ? getVisitorStatus(m) === "FIRST_TIMER" : false;
   }).length;
   const returningCount = checkedInCount - newCount;
 
@@ -91,16 +102,32 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
       </div>
 
       <div className="rounded-lg overflow-hidden shadow-sm border" style={{ background: "var(--bg-card)", borderColor: "var(--border-primary)" }}>
-        <div className="p-4 border-b flex items-center gap-3" style={{ borderColor: "var(--border-primary)", background: "var(--bg-elevated)" }}>
-          <Search size={18} className="text-[var(--text-muted)]" />
-          <input 
-            type="text" 
-            placeholder="Search by name or phone..." 
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="bg-transparent border-none focus:outline-none text-sm w-full"
-            style={{ color: "var(--text-primary)" }}
-          />
+        <div className="p-4 border-b flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" style={{ borderColor: "var(--border-primary)", background: "var(--bg-elevated)" }}>
+          <div className="flex items-center gap-3 w-full sm:w-auto flex-1">
+            <Search size={18} className="text-[var(--text-muted)]" />
+            <input 
+              type="text" 
+              placeholder="Search by name or phone..." 
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="bg-transparent border-none focus:outline-none text-sm w-full"
+              style={{ color: "var(--text-primary)" }}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-[var(--text-muted)]" />
+            <select
+              value={filter}
+              onChange={e => setFilter(e.target.value as any)}
+              className="text-sm bg-transparent border-none focus:outline-none cursor-pointer font-medium"
+              style={{ color: "var(--text-primary)" }}
+            >
+              <option value="ALL">All Members</option>
+              <option value="FIRST_TIMER">First Timers (1st visit)</option>
+              <option value="SECOND_TIMER">Second Timers (2nd visit)</option>
+              <option value="REGULAR">Regulars (3+ visits)</option>
+            </select>
+          </div>
         </div>
         
         <div className="overflow-x-auto">
@@ -116,7 +143,7 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
             <tbody className="divide-y divide-[var(--border-subtle)]">
               {filteredMembers.map((member) => {
                 const checkedIn = checkedInIds.has(member.id!);
-                const isNewVisitor = isNew(member);
+                const status = getVisitorStatus(member);
 
                 return (
                   <tr key={member.id} className="transition-colors hover:bg-black/5 dark:hover:bg-white/5">
@@ -128,13 +155,19 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
                       {member.phone}
                     </td>
                     <td className="px-4 py-3">
-                      {isNewVisitor ? (
+                      {status === "FIRST_TIMER" && (
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "var(--success-subtle)", color: "var(--success)" }}>
-                          New Visitor
+                          1st Time Visitor
                         </span>
-                      ) : (
+                      )}
+                      {status === "SECOND_TIMER" && (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                          2nd Time Visitor
+                        </span>
+                      )}
+                      {status === "REGULAR" && (
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "var(--bg-input)", color: "var(--text-secondary)" }}>
-                          Returning
+                          Regular
                         </span>
                       )}
                     </td>

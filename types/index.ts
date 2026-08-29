@@ -140,6 +140,7 @@ export interface CongregationMember {
   address?: string;
   created_at?: Timestamp;
   last_checkin?: Timestamp;
+  attendance_count?: number;
 }
 
 export interface AttendanceRecord {
@@ -194,4 +195,15 @@ export interface FollowUpLog {
   /** ISO date string of the current target Sunday to track weekly completion e.g. "2026-08-23" */
   target_sunday: string;
   logged_at?: Timestamp;
+}
+
+// ─── Evangelism ────────────────────────────────────────────────────────────────
+
+export interface EvangelismContact {
+  id?: string;
+  name: string;
+  phone: string;
+  reached_out_by: string; // worker uid who reached out
+  added_by: string; // worker uid who added the record
+  created_at?: Timestamp;
 }
