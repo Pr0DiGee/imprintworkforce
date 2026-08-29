@@ -61,6 +61,9 @@ function StatCard({ title, value, subtitle, href, accentColor, icon }: StatCardP
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
+import type { FollowUpContact, FollowUpLog } from "@/types";
+import { GlobalFollowUpTable } from "@/components/GlobalFollowUpTable";
+
 interface DashboardClientProps {
   user: UserProfile;
   stats: DashboardStats;
@@ -70,6 +73,8 @@ interface DashboardClientProps {
   currentSunday: string;
   upcomingSunday: string;
   weekDays: string[];
+  followUpContacts: FollowUpContact[];
+  followUpLogs: FollowUpLog[];
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -83,6 +88,8 @@ export function DashboardClient({
   currentSunday,
   upcomingSunday,
   weekDays,
+  followUpContacts,
+  followUpLogs,
 }: DashboardClientProps) {
   const upSundayFormatted = formatShortDate(upcomingSunday);
 
@@ -330,6 +337,25 @@ export function DashboardClient({
             })}
           </div>
         </div>
+      </div>
+
+      {/* Global Follow-Up Table */}
+      <div className="mt-8">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3 className="font-semibold text-lg" style={{ color: "var(--text-primary)" }}>Global Follow-Ups</h3>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Overview of all follow-ups for {formatShortDate(currentSunday)}</p>
+          </div>
+          <Link href="/dashboard/followup" className="btn icon text-xs py-1.5 px-3">
+            Manage Follow-Ups
+          </Link>
+        </div>
+        <GlobalFollowUpTable 
+          contacts={followUpContacts}
+          logs={followUpLogs}
+          userMap={users}
+          targetSunday={currentSunday}
+        />
       </div>
     </div>
   );

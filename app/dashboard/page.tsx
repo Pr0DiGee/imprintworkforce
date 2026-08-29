@@ -5,6 +5,8 @@ import {
   fetchRosterForSunday,
   fetchDevotionForDates,
   fetchUserMap,
+  fetchFollowUpContacts,
+  fetchFollowUpLogs,
 } from "@/lib/server-data";
 import {
   getTargetSundayString,
@@ -23,11 +25,13 @@ export default async function DashboardPage() {
   const currentMonday = getMondayOfWeek(currentSunday);
   const weekDays = getMonToSatDates(currentMonday);
 
-  const [stats, roster, devotions, users] = await Promise.all([
+  const [stats, roster, devotions, users, followUpContacts, followUpLogs] = await Promise.all([
     fetchDashboardStats(user, currentSunday),
     fetchRosterForSunday(upcomingSunday),
     fetchDevotionForDates(weekDays),
     fetchUserMap(),
+    fetchFollowUpContacts(),
+    fetchFollowUpLogs(),
   ]);
 
   return (
@@ -40,6 +44,8 @@ export default async function DashboardPage() {
       currentSunday={currentSunday}
       upcomingSunday={upcomingSunday}
       weekDays={weekDays}
+      followUpContacts={followUpContacts}
+      followUpLogs={followUpLogs}
     />
   );
 }

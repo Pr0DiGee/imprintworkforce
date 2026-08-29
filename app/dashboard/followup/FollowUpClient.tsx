@@ -7,6 +7,7 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { Phone, MessageSquare, MapPin, User, CheckCircle2, UserCheck, Search, Plus } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
+import { GlobalFollowUpTable } from "@/components/GlobalFollowUpTable";
 
 interface FollowUpClientProps {
   user: UserProfile;
@@ -66,72 +67,80 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
         </button>
       </div>
 
-      {/* Tabs & Search */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex bg-[var(--bg-input)] rounded-lg p-1 border" style={{ borderColor: "var(--border-primary)" }}>
-          <button
-            onClick={() => setActiveTab("MY_FOLLOW_UPS")}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === "MY_FOLLOW_UPS" ? "shadow-sm" : ""}`}
-            style={{
-              background: activeTab === "MY_FOLLOW_UPS" ? "var(--bg-card)" : "transparent",
-              color: activeTab === "MY_FOLLOW_UPS" ? "var(--text-primary)" : "var(--text-muted)",
-            }}
-          >
-            My Follow-Ups ({myContacts.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("GLOBAL_LIST")}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === "GLOBAL_LIST" ? "shadow-sm" : ""}`}
-            style={{
-              background: activeTab === "GLOBAL_LIST" ? "var(--bg-card)" : "transparent",
-              color: activeTab === "GLOBAL_LIST" ? "var(--text-primary)" : "var(--text-muted)",
-            }}
-          >
-            Global List
-          </button>
-        </div>
-
-        <div className="relative w-full sm:w-72">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
-          <input
-            type="text"
-            placeholder="Search name or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-primary)",
-              color: "var(--text-primary)",
-            }}
-          />
-        </div>
+      {/* Tabs */}
+      <div className="flex bg-[var(--bg-input)] rounded-lg p-1 border w-fit mb-6" style={{ borderColor: "var(--border-primary)" }}>
+        <button
+          onClick={() => setActiveTab("MY_FOLLOW_UPS")}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === "MY_FOLLOW_UPS" ? "shadow-sm" : ""}`}
+          style={{
+            background: activeTab === "MY_FOLLOW_UPS" ? "var(--bg-card)" : "transparent",
+            color: activeTab === "MY_FOLLOW_UPS" ? "var(--text-primary)" : "var(--text-muted)",
+          }}
+        >
+          My Follow-Ups ({myContacts.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("GLOBAL_LIST")}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === "GLOBAL_LIST" ? "shadow-sm" : ""}`}
+          style={{
+            background: activeTab === "GLOBAL_LIST" ? "var(--bg-card)" : "transparent",
+            color: activeTab === "GLOBAL_LIST" ? "var(--text-primary)" : "var(--text-muted)",
+          }}
+        >
+          Global List
+        </button>
       </div>
 
-      {/* Contact List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredContacts.map(contact => {
-          const completedThisWeek = hasLoggedThisWeek(contact.id!);
-          const latestLog = getLatestLog(contact.id!);
-          return (
-            <ContactCard
-              key={contact.id}
-              contact={contact}
-              user={user}
-              userMap={userMap}
-              completedThisWeek={completedThisWeek}
-              latestLog={latestLog}
-              targetSunday={targetSunday}
-              readOnly={activeTab === "GLOBAL_LIST" && contact.assigned_to !== user.uid}
+      {activeTab === "GLOBAL_LIST" ? (
+        <GlobalFollowUpTable 
+          contacts={contacts}
+          logs={logs}
+          userMap={userMap}
+          targetSunday={targetSunday}
+        />
+      ) : (
+        <>
+          <div className="relative w-full sm:w-72 mb-6">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
+            <input
+              type="text"
+              placeholder="Search name or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-primary)",
+                color: "var(--text-primary)",
+              }}
             />
-          );
-        })}
-        {filteredContacts.length === 0 && (
-          <div className="col-span-full py-12 text-center" style={{ color: "var(--text-muted)" }}>
-            No contacts found matching your criteria.
           </div>
-        )}
-      </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredContacts.map(contact => {
+              const completedThisWeek = hasLoggedThisWeek(contact.id!);
+              const latestLog = getLatestLog(contact.id!);
+              return (
+                <ContactCard
+                  key={contact.id}
+                  contact={contact}
+                  user={user}
+                  userMap={userMap}
+                  completedThisWeek={completedThisWeek}
+                  latestLog={latestLog}
+                  targetSunday={targetSunday}
+                  readOnly={false}
+                />
+              );
+            })}
+            {filteredContacts.length === 0 && (
+              <div className="col-span-full py-12 text-center" style={{ color: "var(--text-muted)" }}>
+                No contacts found matching your criteria.
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {showAddModal && (
         <AddContactModal
