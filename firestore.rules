@@ -19,12 +19,16 @@ service cloud.firestore {
       return isAuth() && userDoc().role == 'LEAD_PASTOR';
     }
 
+    function isAdmin() {
+      return isAuth() && userDoc().role == 'ADMIN';
+    }
+
     function isPastorPlus() {
-      return isAuth() && userDoc().role in ['PASTOR', 'LEAD_PASTOR'];
+      return isAuth() && userDoc().role in ['PASTOR', 'LEAD_PASTOR', 'ADMIN'];
     }
 
     function canEditDevotion() {
-      return isAuth() && userDoc().role in ['DEVOTION_LEAD', 'PASTOR', 'LEAD_PASTOR'];
+      return isAuth() && userDoc().role in ['DEVOTION_LEAD', 'PASTOR', 'LEAD_PASTOR', 'ADMIN'];
     }
 
     // ─── Users ─────────────────────────────────────────────────────────
@@ -36,8 +40,8 @@ service cloud.firestore {
       allow update: if isAuth() && uid() == userId
                     && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'departments']);
 
-      // Lead Pastor can create/update/delete any user (role assignments, department changes)
-      allow write: if isLeadPastor();
+      // Admin can create/update/delete any user (role assignments, department changes)
+      allow write: if isAdmin();
     }
 
     // ─── Reports ───────────────────────────────────────────────────────
@@ -160,6 +164,11 @@ service cloud.firestore {
     match /evangelism_contacts/{contactId} {
       // Anyone authenticated can read and write evangelism contacts globally
       allow read, write: if isAuth();
+    }
+
+    // Global admin override (optional catch-all if needed, but functions above handle it)
+    match /{document=**} {
+      allow read, write: if isAdmin();
     }
   }
 }

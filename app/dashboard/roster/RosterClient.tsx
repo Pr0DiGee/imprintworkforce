@@ -44,6 +44,10 @@ export function RosterClient({
   const canEdit = hasEditRole && !isPast;
   const isWorker = user.role === "WORKER" && !isPast;
 
+  const rosterUsers = users.filter(u => 
+    !(u.departments || []).includes("DEVOTION") && u.department !== "DEVOTION"
+  );
+
   useEffect(() => {
     setEditMode(false);
   }, [targetSunday]);
@@ -225,7 +229,7 @@ export function RosterClient({
                     style={{ background: "var(--bg-input)", color: "var(--text-primary)" }}
                   >
                     <option value="">— unassigned —</option>
-                    {users.map((u) => (
+                    {rosterUsers.map((u) => (
                       <option key={u.uid} value={u.uid}>{u.name}</option>
                     ))}
                   </select>

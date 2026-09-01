@@ -5,6 +5,8 @@ import { UserProfile, DEPARTMENT_LABELS } from "@/types";
 import { updateProfile } from "./actions";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/context/AuthContext";
+import { auth } from "@/lib/firebase/client";
+import { updatePassword } from "firebase/auth";
 
 export function ProfileForm({ user }: { user: UserProfile }) {
   const { refreshProfile } = useAuth();
@@ -15,6 +17,11 @@ export function ProfileForm({ user }: { user: UserProfile }) {
   const [name, setName] = useState(user.name);
   const [previewUrl, setPreviewUrl] = useState<string | null>(user.photo_url || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [newPassword, setNewPassword] = useState("");
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdError, setPwdError] = useState<string | null>(null);
+  const [pwdSuccess, setPwdSuccess] = useState(false);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,7 +60,30 @@ export function ProfileForm({ user }: { user: UserProfile }) {
     }
   }
 
+  async function handlePasswordChange(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!auth.currentUser) return;
+    setPwdLoading(true);
+    setPwdError(null);
+    setPwdSuccess(false);
+
+    try {
+      await updatePassword(auth.currentUser, newPassword);
+      setPwdSuccess(true);
+      setNewPassword("");
+    } catch (err: any) {
+      if (err.code === "auth/requires-recent-login") {
+        setPwdError("For security reasons, please log out and log back in before changing your password.");
+      } else {
+        setPwdError(err.message || "Failed to update password.");
+      }
+    } finally {
+      setPwdLoading(false);
+    }
+  }
+
   return (
+    <div className="space-y-12">
     <form onSubmit={handleSubmit} className="space-y-6">
       
       {/* Profile Picture Section */}
@@ -186,5 +216,56 @@ export function ProfileForm({ user }: { user: UserProfile }) {
         </button>
       </div>
     </form>
+
+    <div className="pt-8" style={{ borderTop: "1px solid var(--border-primary)" }}>
+      <h3 className="text-base font-semibold mb-4" style={{ color: "var(--text-primary)" }}>Security</h3>
+      <form onSubmit={handlePasswordChange} className="space-y-4 max-w-sm">
+        <div>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-primary)" }}>
+            New Password
+          </label>
+          <input
+            type="password"
+            required
+            minLength={6}
+            value={newPassword}
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              setPwdSuccess(false);
+            }}
+            className="w-full px-4 py-2.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
+            style={{
+              background: "var(--bg-input)",
+              border: "1px solid var(--border-primary)",
+              color: "var(--text-primary)",
+            }}
+          />
+        </div>
+
+        {pwdError && (
+          <p className="text-sm px-4 py-3 rounded-lg bg-[var(--danger-subtle)] text-[var(--danger)] border border-[var(--danger)]">
+            {pwdError}
+          </p>
+        )}
+
+        {pwdSuccess && (
+          <p className="text-sm px-4 py-3 rounded-lg bg-[var(--success-subtle)] text-[var(--success)] border border-[var(--success)]">
+            Password changed successfully!
+          </p>
+        )}
+
+        <div>
+          <button
+            type="submit"
+            disabled={pwdLoading || !newPassword}
+            className="py-2 px-4 text-white font-medium rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 disabled:opacity-70 shadow-sm hover:opacity-90"
+            style={{ background: "var(--accent)" }}
+          >
+            {pwdLoading ? "Updating..." : "Change Password"}
+          </button>
+        </div>
+      </form>
+    </div>
+    </div>
   );
 }

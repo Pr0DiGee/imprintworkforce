@@ -1,7 +1,7 @@
 import { Timestamp } from "firebase/firestore";
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
-export type AppRole = "WORKER" | "PASTOR" | "LEAD_PASTOR" | "DEVOTION_LEAD";
+export type AppRole = "WORKER" | "PASTOR" | "LEAD_PASTOR" | "DEVOTION_LEAD" | "ADMIN";
 
 // ─── Departments ──────────────────────────────────────────────────────────────
 export type Department =
@@ -29,25 +29,31 @@ export const DEPARTMENT_LABELS: Record<Department, string> = {
 
 // ─── Roster Duties ──────────────────────────────────────────────────────────────
 export type RosterDuty =
+  | "WORKERS_MEETING"
   | "CALL_TO_WORSHIP"
-  | "OPENING_PRAYER"
-  | "OFFERING_ANNOUNCEMENTS"
-  | "PRAYER_FOR_THE_WEEK"
+  | "WORSHIP_SESSION"
+  | "PRAYER_CHARGE"
+  | "SERMON"
+  | "OFFERING_ANNOUNCEMENT"
   | "BENEDICTION";
 
 export const ROSTER_DUTIES: RosterDuty[] = [
+  "WORKERS_MEETING",
   "CALL_TO_WORSHIP",
-  "OPENING_PRAYER",
-  "OFFERING_ANNOUNCEMENTS",
-  "PRAYER_FOR_THE_WEEK",
+  "WORSHIP_SESSION",
+  "PRAYER_CHARGE",
+  "SERMON",
+  "OFFERING_ANNOUNCEMENT",
   "BENEDICTION",
 ];
 
 export const ROSTER_DUTY_LABELS: Record<RosterDuty, string> = {
+  WORKERS_MEETING: "Workers Meeting",
   CALL_TO_WORSHIP: "Call to Worship",
-  OPENING_PRAYER: "Opening Prayer",
-  OFFERING_ANNOUNCEMENTS: "Offering & Announcements",
-  PRAYER_FOR_THE_WEEK: "Prayer for the Week",
+  WORSHIP_SESSION: "Worship Session",
+  PRAYER_CHARGE: "Prayer Charge",
+  SERMON: "Sermon",
+  OFFERING_ANNOUNCEMENT: "Offering & Announcement",
   BENEDICTION: "Benediction",
 };
 
@@ -110,6 +116,7 @@ export interface DevotionDaily {
   /** ISO date string of the specific day e.g. "2026-08-17" */
   date: string;
   assigned_to: string; // uid of the person leading devotion
+  backup_teacher?: string; // uid of the backup devotion leader
   /** Plain text topic for the day */
   topic: string;
   /** Stringified Tiptap JSON document */

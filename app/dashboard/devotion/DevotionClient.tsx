@@ -144,6 +144,7 @@ export function DevotionClient({
     const existing = devotions[date] || {
       date,
       assigned_to: "",
+      backup_teacher: "",
       topic: "",
       teaching_notes: "",
     };
@@ -233,24 +234,41 @@ export function DevotionClient({
             <div key={date} className="border-b last:border-b-0" style={{ borderColor: "var(--border-primary)" }}>
               <div className="flex flex-col md:flex-row md:items-center gap-3 p-4">
                 
-                <div className="flex items-center gap-3 md:w-48 shrink-0">
-                  <div className="w-10 text-center shrink-0">
-                    <div className="text-sm font-semibold">{dow}</div>
-                    <div className="text-xs" style={{ color: "var(--text-muted)" }}>{num}</div>
+                <div className="flex flex-col gap-2 md:w-56 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 text-center shrink-0">
+                      <div className="text-sm font-semibold">{dow}</div>
+                      <div className="text-xs" style={{ color: "var(--text-muted)" }}>{num}</div>
+                    </div>
+                    
+                    <select
+                      value={dev?.assigned_to || ""}
+                      onChange={(e) => handleDayUpdate(date, { assigned_to: e.target.value })}
+                      disabled={!hasPermission}
+                      className="flex-1 min-w-[140px] px-2 py-1 text-xs rounded-md border"
+                      style={{ background: "var(--bg-input)", color: "var(--text-primary)", borderColor: "var(--border-primary)" }}
+                    >
+                      <option value="">— assign teacher —</option>
+                      {users.map(u => (
+                        <option key={u.uid} value={u.uid}>{u.name}</option>
+                      ))}
+                    </select>
                   </div>
                   
-                  <select
-                    value={dev?.assigned_to || ""}
-                    onChange={(e) => handleDayUpdate(date, { assigned_to: e.target.value })}
-                    disabled={!hasPermission}
-                    className="flex-1 min-w-[140px] px-2 py-1 text-sm rounded-md border"
-                    style={{ background: "var(--bg-input)", color: "var(--text-primary)", borderColor: "var(--border-primary)" }}
-                  >
-                    <option value="">— unassigned —</option>
-                    {users.map(u => (
-                      <option key={u.uid} value={u.uid}>{u.name}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-3 pl-[3.25rem]">
+                    <select
+                      value={dev?.backup_teacher || ""}
+                      onChange={(e) => handleDayUpdate(date, { backup_teacher: e.target.value })}
+                      disabled={!hasPermission}
+                      className="flex-1 min-w-[140px] px-2 py-1 text-xs rounded-md border opacity-80"
+                      style={{ background: "var(--bg-input)", color: "var(--text-primary)", borderColor: "var(--border-primary)" }}
+                    >
+                      <option value="">— assign backup —</option>
+                      {users.map(u => (
+                        <option key={u.uid} value={u.uid}>{u.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="flex-1 flex items-center gap-3 w-full">
