@@ -3,12 +3,13 @@ import { headers } from "next/headers";
 import { getServerUser } from "@/lib/server-auth";
 import { PrintButton } from "./PrintButton";
 import QRCode from "react-qr-code";
+import { isPastor } from "@/lib/roles";
 
 export default async function AttendanceQRPage() {
   const user = await getServerUser();
   if (!user) redirect("/login");
   
-  if (user.role !== "PASTOR" && user.role !== "LEAD_PASTOR") {
+  if (!isPastor(user.role)) {
     redirect("/dashboard");
   }
 

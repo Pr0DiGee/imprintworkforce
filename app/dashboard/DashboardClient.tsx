@@ -302,9 +302,10 @@ export function DashboardClient({
                 : null;
 
               return (
-                <div
+                <Link
                   key={date}
-                  className="flex justify-between items-start gap-2 text-sm"
+                  href="/dashboard/devotion"
+                  className="flex justify-between items-start gap-2 text-sm hover:opacity-80 transition-opacity"
                 >
                   <div className="flex gap-2">
                     <span
@@ -332,7 +333,7 @@ export function DashboardClient({
                       {name}
                     </span>
                   )}
-                </div>
+                </Link>
               );
             })}
           </div>

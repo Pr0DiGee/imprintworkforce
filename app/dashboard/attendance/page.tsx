@@ -5,11 +5,13 @@ import { CongregationMember, AttendanceRecord } from "@/types";
 import { getTargetSundayString } from "@/lib/sunday";
 import { AttendanceClient } from "./AttendanceClient";
 
+import { isPastor } from "@/lib/roles";
+
 export default async function AttendancePage() {
   const user = await getServerUser();
   if (!user) redirect("/login");
   
-  if (user.role !== "PASTOR" && user.role !== "LEAD_PASTOR") {
+  if (!isPastor(user.role)) {
     redirect("/dashboard");
   }
 

@@ -272,13 +272,13 @@ export function DevotionClient({
                 </div>
 
                 <div className="flex-1 flex items-center gap-3 w-full">
-                  <input
-                    type="text"
+                  <textarea
                     value={dev?.topic || ""}
                     onChange={(e) => handleDayUpdate(date, { topic: e.target.value })}
                     disabled={!hasPermission || !isLeaderAssigned}
                     placeholder={isLeaderAssigned ? "Enter teaching topic" : "Assign a leader first"}
-                    className="flex-1 min-w-0 px-2 py-1 text-sm rounded-md border"
+                    rows={1}
+                    className="flex-1 min-w-0 px-2 py-1.5 text-sm rounded-md border resize-y min-h-[34px]"
                     style={{ 
                       background: "var(--bg-input)", 
                       color: "var(--text-primary)",

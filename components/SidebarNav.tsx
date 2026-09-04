@@ -42,7 +42,8 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const { userProfile } = useAuth();
   const { theme, toggle } = useTheme();
   const isLeadPastor = userProfile?.role === "LEAD_PASTOR";
-  const isPastorPlus = ["PASTOR", "LEAD_PASTOR"].includes(userProfile?.role ?? "");
+  const isAdmin = userProfile?.role === "ADMIN";
+  const isPastorPlus = ["PASTOR", "LEAD_PASTOR", "ADMIN"].includes(userProfile?.role ?? "");
 
   const linkClasses = (href: string) => {
     const active = isActive(pathname, href);
@@ -112,8 +113,8 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       )}
 
-      {/* LEAD_PASTOR admin */}
-      {isLeadPastor && (
+      {/* ADMIN ONLY */}
+      {isAdmin && (
         <>
           <div className="my-3" style={{ borderTop: "1px solid var(--border-primary)" }} />
           <Link

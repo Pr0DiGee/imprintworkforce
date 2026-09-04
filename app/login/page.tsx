@@ -362,10 +362,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <p className="text-center text-xs mt-8 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            New accounts are assigned the <span className="font-semibold" style={{ color: "var(--text-primary)" }}>Worker</span> role by default.
-            <br />Contact your administrator to update your role.
-          </p>
         </div>
       </div>
     </main>

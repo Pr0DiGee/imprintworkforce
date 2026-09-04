@@ -31,7 +31,6 @@ export const DEPARTMENT_LABELS: Record<Department, string> = {
 export type RosterDuty =
   | "WORKERS_MEETING"
   | "CALL_TO_WORSHIP"
-  | "WORSHIP_SESSION"
   | "PRAYER_CHARGE"
   | "SERMON"
   | "OFFERING_ANNOUNCEMENT"
@@ -40,7 +39,6 @@ export type RosterDuty =
 export const ROSTER_DUTIES: RosterDuty[] = [
   "WORKERS_MEETING",
   "CALL_TO_WORSHIP",
-  "WORSHIP_SESSION",
   "PRAYER_CHARGE",
   "SERMON",
   "OFFERING_ANNOUNCEMENT",
@@ -50,7 +48,6 @@ export const ROSTER_DUTIES: RosterDuty[] = [
 export const ROSTER_DUTY_LABELS: Record<RosterDuty, string> = {
   WORKERS_MEETING: "Workers Meeting",
   CALL_TO_WORSHIP: "Call to Worship",
-  WORSHIP_SESSION: "Worship Session",
   PRAYER_CHARGE: "Prayer Charge",
   SERMON: "Sermon",
   OFFERING_ANNOUNCEMENT: "Offering & Announcement",
