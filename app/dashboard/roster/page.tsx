@@ -30,7 +30,10 @@ export default async function RosterPage() {
       const slotEntries = await Promise.all(
         ROSTER_DUTIES.map(async (duty) => {
           const snap = await db.collection("roster").doc(`${date}_${duty}`).get();
-          return [duty, snap.exists ? ({ id: snap.id, ...snap.data() } as Roster) : null] as const;
+          if (!snap.exists) return [duty, null] as const;
+          const data = snap.data()!;
+          if (data.created_at) delete data.created_at;
+          return [duty, { id: snap.id, ...data } as Roster] as const;
         })
       );
       allSlots[date] = Object.fromEntries(slotEntries) as Record<RosterDuty, Roster | null>;

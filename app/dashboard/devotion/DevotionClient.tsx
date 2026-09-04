@@ -275,6 +275,11 @@ export function DevotionClient({
                   <textarea
                     value={dev?.topic || ""}
                     onChange={(e) => handleDayUpdate(date, { topic: e.target.value })}
+                    onInput={(e) => {
+                      const el = e.currentTarget;
+                      el.style.height = "auto";
+                      el.style.height = Math.min(el.scrollHeight, 72) + "px";
+                    }}
                     disabled={!hasPermission || !isLeaderAssigned}
                     placeholder={isLeaderAssigned ? "Enter teaching topic" : "Assign a leader first"}
                     rows={1}
