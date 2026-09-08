@@ -89,4 +89,32 @@ export function isDateBefore(dateStr: string, referenceStr: string): boolean {
   return isBefore(parseISO(dateStr), parseISO(referenceStr));
 }
 
+/**
+ * Format a check-in date relatively.
+ * If today -> "Today"
+ * If < 7 days -> Day of week (e.g. "Monday")
+ * Else -> "dd-MM-yyyy" (e.g. "01-09-2026")
+ */
+export function formatRelativeCheckInDate(dateStr: string | Date | number | null | undefined): string {
+  if (!dateStr) return "Never";
+  
+  const date = new Date(dateStr);
+  const now = new Date();
+  
+  // Set times to midnight to calculate day differences properly
+  const dateMid = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const nowMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  const diffTime = nowMid.getTime() - dateMid.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays > 1 && diffDays < 7) {
+    return format(date, "EEEE");
+  }
+  
+  return format(date, "dd-MM-yyyy");
+}
+
 export { parseISO, format, isBefore, isAfter, isSameDay };

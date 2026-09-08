@@ -11,6 +11,8 @@ interface GlobalFollowUpTableProps {
   targetSunday: string;
 }
 
+import { formatRelativeCheckInDate } from "@/lib/date";
+
 export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: GlobalFollowUpTableProps) {
   const [search, setSearch] = useState("");
 
@@ -22,10 +24,6 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: G
 
   const getLatestLog = (contactId: string) => {
     return logs.find(l => l.contact_id === contactId); // logs are sorted desc
-  };
-
-  const hasLoggedThisWeek = (contactId: string) => {
-    return logs.some(l => l.contact_id === contactId && l.target_sunday === targetSunday);
   };
 
   return (
@@ -48,14 +46,13 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: G
             <tr style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border-primary)" }}>
               <th className="text-left px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Person</th>
               <th className="text-left px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Assigned To</th>
-              <th className="text-left px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Check-in this week?</th>
+              <th className="text-left px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Last Check-in</th>
               <th className="text-left px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Method</th>
               <th className="text-left px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Comments</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)]">
             {filteredContacts.map(contact => {
-              const checkedIn = hasLoggedThisWeek(contact.id!);
               const latestLog = getLatestLog(contact.id!);
               
               return (
@@ -68,15 +65,9 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: G
                     {userMap[contact.assigned_to] || "Unknown"}
                   </td>
                   <td className="px-4 py-3">
-                    {checkedIn ? (
-                      <span className="text-xs font-medium px-2 py-1 rounded" style={{ background: "var(--success-subtle)", color: "var(--success)" }}>
-                        Yes
-                      </span>
-                    ) : (
-                      <span className="text-xs font-medium px-2 py-1 rounded" style={{ background: "var(--bg-input)", color: "var(--text-secondary)" }}>
-                        No
-                      </span>
-                    )}
+                    <span className="text-xs font-medium px-2 py-1 rounded" style={{ background: "var(--bg-input)", color: "var(--text-secondary)" }}>
+                      {formatRelativeCheckInDate(latestLog?.logged_at as any)}
+                    </span>
                   </td>
                   <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>
                     {latestLog ? (

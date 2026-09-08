@@ -3,11 +3,12 @@
 import { useState, useMemo } from "react";
 import { UserProfile, FollowUpContact, FollowUpLog, FollowUpMethod } from "@/types";
 import { format } from "date-fns";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import { Phone, MessageSquare, MapPin, User, CheckCircle2, UserCheck, Search, Plus } from "lucide-react";
+import { Phone, MessageSquare, MapPin, User, CheckCircle2, UserCheck, Search, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import { GlobalFollowUpTable } from "@/components/GlobalFollowUpTable";
+import { formatRelativeCheckInDate } from "@/lib/date";
 
 interface FollowUpClientProps {
   user: UserProfile;
@@ -229,11 +230,34 @@ function ContactCard({
               <span>{contact.assigned_to === user.uid ? "You" : (userMap[contact.assigned_to] || "Unknown Worker")}</span>
             </div>
           </div>
-          {completedThisWeek && (
-            <div className="bg-emerald-500/10 text-emerald-500 rounded-full p-1" title="Logged this week">
-              <CheckCircle2 size={18} />
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {!readOnly && (
+              <button 
+                onClick={async () => {
+                  if (confirm("Are you sure you want to delete this contact?")) {
+                    try {
+                      await deleteDoc(doc(db, "followup_contacts", contact.id!));
+                      toast.success("Contact deleted");
+                      window.location.reload();
+                    } catch (err) {
+                      console.error(err);
+                      toast.error("Failed to delete contact");
+                    }
+                  }
+                }}
+                className="p-1 rounded transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                style={{ color: "var(--danger)" }}
+                title="Delete Contact"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+            {completedThisWeek && (
+              <div className="bg-emerald-500/10 text-emerald-500 rounded-full p-1" title="Logged this week">
+                <CheckCircle2 size={18} />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2 mt-2 text-sm flex-1" style={{ color: "var(--text-secondary)" }}>
@@ -295,7 +319,7 @@ function ContactCard({
               <div className="text-xs" style={{ color: "var(--text-muted)" }}>
                 {latestLog ? (
                   <span>
-                    Last: {latestLog.method} • {latestLog.logged_at ? new Date((latestLog.logged_at as any)).toLocaleDateString() : "Recent"}
+                    Last: {latestLog.method} • {formatRelativeCheckInDate(latestLog.logged_at as any)}
                   </span>
                 ) : (
                   <span>No activity yet</span>
