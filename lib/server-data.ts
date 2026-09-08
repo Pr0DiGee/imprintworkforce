@@ -18,7 +18,6 @@ import type {
   Note,
   FollowUpContact,
   FollowUpLog,
-  EvangelismContact,
 } from "@/types";
 import { isPastor, isLeadPastor } from "@/lib/roles";
 
@@ -276,15 +275,5 @@ export async function fetchFollowUpLogs(): Promise<FollowUpLog[]> {
     .orderBy("logged_at", "desc")
     .get();
   return snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as FollowUpLog));
-}
-
-// ─── Evangelism ────────────────────────────────────────────────────────────────
-
-export async function fetchEvangelismContacts(): Promise<EvangelismContact[]> {
-  const snap = await db()
-    .collection("evangelism_contacts")
-    .orderBy("created_at", "desc")
-    .get();
-  return snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as EvangelismContact));
 }
 

@@ -201,13 +201,4 @@ export interface FollowUpLog {
   logged_at?: Timestamp;
 }
 
-// ─── Evangelism ────────────────────────────────────────────────────────────────
 
-export interface EvangelismContact {
-  id?: string;
-  name: string;
-  phone: string;
-  reached_out_by: string; // worker uid who reached out
-  added_by: string; // worker uid who added the record
-  created_at?: Timestamp;
-}
