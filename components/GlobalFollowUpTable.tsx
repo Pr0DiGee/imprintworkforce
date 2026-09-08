@@ -26,6 +26,20 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: G
     return logs.find(l => l.contact_id === contactId); // logs are sorted desc
   };
 
+  const sortedContacts = [...filteredContacts].sort((a, b) => {
+    const logA = getLatestLog(a.id!);
+    const logB = getLatestLog(b.id!);
+    
+    if (!logA && !logB) return 0;
+    if (!logA) return 1;
+    if (!logB) return -1;
+    
+    const timeA = new Date(logA.logged_at as string).getTime();
+    const timeB = new Date(logB.logged_at as string).getTime();
+    
+    return timeB - timeA;
+  });
+
   return (
     <div className="rounded-lg overflow-hidden shadow-sm border w-full" style={{ background: "var(--bg-card)", borderColor: "var(--border-primary)" }}>
       <div className="p-4 border-b flex items-center gap-3" style={{ borderColor: "var(--border-primary)", background: "var(--bg-elevated)" }}>
@@ -52,7 +66,7 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: G
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)]">
-            {filteredContacts.map(contact => {
+            {sortedContacts.map(contact => {
               const latestLog = getLatestLog(contact.id!);
               
               return (
@@ -87,7 +101,7 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: G
               );
             })}
             
-            {filteredContacts.length === 0 && (
+            {sortedContacts.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-[var(--text-muted)] italic text-sm">
                   No follow-ups found.

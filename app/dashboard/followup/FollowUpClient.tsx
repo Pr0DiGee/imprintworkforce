@@ -32,14 +32,32 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
 
   const filteredContacts = useMemo(() => {
     const list = activeTab === "MY_FOLLOW_UPS" ? myContacts : contacts;
-    if (!searchQuery) return list;
-    const lowerQ = searchQuery.toLowerCase();
-    return list.filter(c => 
-      c.name.toLowerCase().includes(lowerQ) || 
-      c.phone.toLowerCase().includes(lowerQ) ||
-      (c.address && c.address.toLowerCase().includes(lowerQ))
-    );
-  }, [activeTab, myContacts, contacts, searchQuery]);
+    
+    // First, filter by search query
+    let filtered = list;
+    if (searchQuery) {
+      const lowerQ = searchQuery.toLowerCase();
+      filtered = list.filter(c => 
+        c.name.toLowerCase().includes(lowerQ) || 
+        c.phone.toLowerCase().includes(lowerQ) ||
+        (c.address && c.address.toLowerCase().includes(lowerQ))
+      );
+    }
+    
+    // Then, sort by latest log time (most recent first, no logs last)
+    return [...filtered].sort((a, b) => {
+      const logA = logs.find(l => l.contact_id === a.id);
+      const logB = logs.find(l => l.contact_id === b.id);
+      
+      if (!logA && !logB) return 0;
+      if (!logA) return 1;
+      if (!logB) return -1;
+      
+      const timeA = new Date(logA.logged_at as string).getTime();
+      const timeB = new Date(logB.logged_at as string).getTime();
+      return timeB - timeA;
+    });
+  }, [activeTab, myContacts, contacts, searchQuery, logs]);
 
   // Helper to check if a contact was followed up this week
   const hasLoggedThisWeek = (contactId: string) => {
