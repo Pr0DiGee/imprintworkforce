@@ -18,10 +18,9 @@ export async function GET(request: Request) {
   try {
     const db = getAdminDb();
     
-    // Remind for today and tomorrow
-    const today = getISODateOffset(0);
+    // Remind for tomorrow only
     const tomorrow = getISODateOffset(1);
-    const dates = [today, tomorrow];
+    const dates = [tomorrow];
 
     const devotionSnap = await db
       .collection("devotion")
@@ -53,8 +52,7 @@ export async function GET(request: Request) {
       const user = userMap[devotion.assigned_to];
       if (!user) continue;
 
-      const isToday = devotion.date === today;
-      const dayLabel = isToday ? "Today" : "Tomorrow";
+      const dayLabel = "Tomorrow";
       const topicStr = devotion.topic ? `Topic: ${devotion.topic}` : "Topic: (Not set yet)";
 
       const html = `

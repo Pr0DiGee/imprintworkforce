@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/roster-reminder",
+      "schedule": "0 8 * * 6"
+    },
+    {
+      "path": "/api/cron/devotion-reminder",
+      "schedule": "0 8 * * 0-5"
+    },
+    {
+      "path": "/api/cron/task-reminder",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}

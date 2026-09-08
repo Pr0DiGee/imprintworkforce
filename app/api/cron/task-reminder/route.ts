@@ -26,12 +26,11 @@ export async function GET(request: Request) {
     const tasks = tasksSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
     
     // Determine which tasks need reminders.
-    // Let's remind if the deadline is today, tomorrow, or in the past (overdue).
+    // We only remind exactly 1 day before the deadline, and exactly 1 day after (if overdue).
     const now = new Date();
     // Normalize 'today' to midnight for comparison
     const todayStr = now.toISOString().split("T")[0];
     const todayMs = new Date(todayStr + "T00:00:00Z").getTime();
-    const tomorrowMs = todayMs + 24 * 60 * 60 * 1000;
     
     const tasksToRemind = tasks.filter(task => {
       if (!task.deadline) return false;
@@ -39,8 +38,12 @@ export async function GET(request: Request) {
       const deadlineStr = deadlineDate.toISOString().split("T")[0];
       const deadlineMs = new Date(deadlineStr + "T00:00:00Z").getTime();
       
-      // Overdue, today, or tomorrow
-      return deadlineMs <= tomorrowMs;
+      // Remind exactly 1 day before the deadline
+      const oneDayBeforeDeadlineMs = deadlineMs - 24 * 60 * 60 * 1000;
+      // Overdue reminder exactly 1 day after the deadline
+      const oneDayAfterDeadlineMs = deadlineMs + 24 * 60 * 60 * 1000;
+      
+      return todayMs === oneDayBeforeDeadlineMs || todayMs === oneDayAfterDeadlineMs;
     });
 
     if (tasksToRemind.length === 0) {
@@ -87,7 +90,7 @@ export async function GET(request: Request) {
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
           <h2>Imprint Workforce: Task Reminders</h2>
           <p>Hello ${user.name},</p>
-          <p>You have ${tList.length} task(s) that are due soon or overdue:</p>
+          <p>You have ${tList.length} task(s) that are due tomorrow or became overdue today:</p>
           <ul>
             ${tasksHtml}
           </ul>
