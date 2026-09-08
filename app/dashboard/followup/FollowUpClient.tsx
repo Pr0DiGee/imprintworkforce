@@ -53,8 +53,8 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
       if (!logA) return 1;
       if (!logB) return -1;
       
-      const timeA = new Date(logA.logged_at as string).getTime();
-      const timeB = new Date(logB.logged_at as string).getTime();
+      const timeA = new Date(logA.logged_at as any).getTime();
+      const timeB = new Date(logB.logged_at as any).getTime();
       return timeB - timeA;
     });
   }, [activeTab, myContacts, contacts, searchQuery, logs]);
