@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
 import {
   UserProfile,
   AppRole,
@@ -53,12 +51,18 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
     setSaving(true);
 
     try {
-      await updateDoc(doc(db, "users", uid), {
-        role: editRole,
-        departments: editDepts,
-        // Sync the old field for backwards compatibility if needed
-        department: editDepts.length > 0 ? editDepts[0] : "",
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid,
+          role: editRole,
+          departments: editDepts,
+        }),
       });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update user.");
 
       setUsers((prev) =>
         prev.map((u) =>

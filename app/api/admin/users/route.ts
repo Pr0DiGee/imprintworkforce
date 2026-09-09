@@ -45,3 +45,36 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const adminUser = await getServerUser();
+    if (!adminUser || adminUser.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const { uid, role, departments } = await req.json();
+
+    if (!uid || !role) {
+      return NextResponse.json({ error: "Missing required fields (uid, role)" }, { status: 400 });
+    }
+
+    const db = getAdminDb();
+
+    await db.collection("users").doc(uid).update({
+      role,
+      departments: departments || [],
+      // Sync the legacy field for backwards compatibility
+      department: departments && departments.length > 0 ? departments[0] : "",
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("[PATCH /api/admin/users]", error);
+    return NextResponse.json(
+      { error: error.message || "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
