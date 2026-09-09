@@ -9,12 +9,12 @@ import { TableHeader } from "@tiptap/extension-table-header";
 import { useState, useCallback, useRef } from "react";
 import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import { Report, Department, ReportStatus, ReportMetric, ReportMetricStyle } from "@/types";
+import { Report, Department, ReportStatus } from "@/types";
 import { getTargetSundayString } from "@/lib/date";
 import { useToast } from "@/context/ToastContext";
 import { ToolbarBtn } from "@/components/ToolbarBtn";
 import Image from "next/image";
-import { Mail, Download, Plus, Trash2 } from "lucide-react";
+import { Mail, Download } from "lucide-react";
 
 interface ReportEditorProps {
   existingReport: Report | null;
@@ -39,7 +39,6 @@ export function ReportEditor({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
-  const [metrics, setMetrics] = useState<ReportMetric[]>(existingReport?.metrics || []);
   const { success, error } = useToast();
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -88,7 +87,6 @@ export function ReportEditor({
       if (existingReport?.id) {
         await updateDoc(reportRef, {
           content,
-          metrics,
           status,
           last_edited_by: uid,
           last_edited_at: timestamp,
@@ -100,7 +98,6 @@ export function ReportEditor({
         await setDoc(reportRef, {
           department,
           content,
-          metrics,
           status,
           last_edited_by: uid,
           created_at: timestamp,
@@ -114,7 +111,6 @@ export function ReportEditor({
         id: docId,
         department,
         content,
-        metrics,
         status,
         last_edited_by: uid,
         created_at: existingReport?.created_at as any,
@@ -239,18 +235,6 @@ export function ReportEditor({
     }
   }
 
-  function addMetric() {
-    setMetrics([...metrics, { id: Date.now().toString(), value: "0", label: "New Metric", style: "square" }]);
-  }
-
-  function updateMetric(id: string, updates: Partial<ReportMetric>) {
-    setMetrics(metrics.map(m => m.id === id ? { ...m, ...updates } : m));
-  }
-
-  function removeMetric(id: string) {
-    setMetrics(metrics.filter(m => m.id !== id));
-  }
-
   if (!editor) return null;
 
   return (
@@ -268,98 +252,45 @@ export function ReportEditor({
           <ToolbarBtn title="Ordered list" onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive("orderedList")}>1. List</ToolbarBtn>
           <span className="w-px h-5 mx-1" style={{ background: "var(--border-primary)" }} />
           <ToolbarBtn title="Insert Table" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>Table</ToolbarBtn>
+          <ToolbarBtn title="Add Row" onClick={() => editor.chain().focus().addRowAfter().run()} disabled={!editor.isActive("table")}>+Row</ToolbarBtn>
+          <ToolbarBtn title="Add Col" onClick={() => editor.chain().focus().addColumnAfter().run()} disabled={!editor.isActive("table")}>+Col</ToolbarBtn>
+          <ToolbarBtn title="Del Row" onClick={() => editor.chain().focus().deleteRow().run()} disabled={!editor.isActive("table")}>-Row</ToolbarBtn>
+          <ToolbarBtn title="Del Col" onClick={() => editor.chain().focus().deleteColumn().run()} disabled={!editor.isActive("table")}>-Col</ToolbarBtn>
           <ToolbarBtn title="Delete Table" onClick={() => editor.chain().focus().deleteTable().run()} disabled={!editor.isActive("table")}>Del Table</ToolbarBtn>
-          <span className="w-px h-5 mx-1" style={{ background: "var(--border-primary)" }} />
-          <ToolbarBtn title="Add Metric" onClick={addMetric}><Plus size={14} className="mr-1"/> Metric</ToolbarBtn>
         </div>
       )}
 
       {/* A4 Page Container */}
-      <div className="a4-page-wrapper p-8 sm:p-12 overflow-x-auto" ref={pageRef}>
-        
-        {/* Header */}
-        <div className="flex items-center gap-6 mb-6">
-          <div className="shrink-0">
-            {/* The logo from public/logo.png */}
-            <Image src="/logo.png" alt="Logo" width={80} height={80} className="object-contain" />
+      <div className="a4-page-wrapper-container">
+        <div className="a4-page-wrapper p-8 sm:p-12 overflow-x-auto" ref={pageRef}>
+          
+          {/* Header */}
+          <div className="flex items-center gap-6 mb-6">
+            <div className="shrink-0">
+              {/* The logo from public/logo.png */}
+              <Image src="/logo.png" alt="Logo" width={80} height={80} className="object-contain" />
+            </div>
+            <div className="flex-1">
+              <h4 style={{ color: '#6b7280', fontWeight: 500, fontSize: '0.875rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{headerPrefix}</h4>
+              <h1 style={{ color: '#111827', fontSize: '1.875rem', fontWeight: 700, marginTop: '4px' }}>{departmentName} Report</h1>
+              <p style={{ color: '#6b7280', marginTop: '4px', fontStyle: 'italic' }}>
+                Date: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
           </div>
-          <div className="flex-1">
-            <h4 className="text-gray-500 font-medium text-sm tracking-wider uppercase">{headerPrefix}</h4>
-            <h1 className="text-3xl font-bold mt-1 text-gray-900">{departmentName} Report</h1>
-            <p className="text-gray-500 mt-1 italic">Date: {new Date(targetSunday).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+
+          {/* Red Divider */}
+          <div style={{ width: '100%', height: '2px', backgroundColor: '#b91c1c', marginBottom: '2rem' }}></div>
+
+          {/* Editor Body */}
+          <div style={{ flexGrow: 1 }}>
+            <EditorContent editor={editor} />
           </div>
-        </div>
-
-        {/* Red Divider */}
-        <div className="w-full h-0.5 bg-[#b91c1c] mb-8"></div>
-
-        {/* Metrics Section */}
-        {metrics.length > 0 && (
-          <div className="flex flex-wrap gap-4 mb-8">
-            {metrics.map((metric) => (
-              <div 
-                key={metric.id} 
-                className="relative group flex-1 min-w-[120px] max-w-[200px]"
-              >
-                {!disabled && (
-                  <button 
-                    onClick={() => removeMetric(metric.id)}
-                    className="absolute -top-2 -right-2 bg-red-100 text-red-600 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 no-print"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                )}
-                
-                <div 
-                  className={`flex flex-col items-center justify-center p-4 h-full
-                    ${metric.style === 'square' ? 'border border-gray-200' : ''}
-                    ${metric.style === 'circle' ? 'border border-gray-200 rounded-full aspect-square' : ''}
-                  `}
-                >
-                  <input
-                    value={metric.value}
-                    onChange={(e) => updateMetric(metric.id, { value: e.target.value })}
-                    disabled={disabled}
-                    className="text-3xl font-bold text-[#b91c1c] text-center bg-transparent border-none p-0 focus:ring-0 w-full"
-                    placeholder="0"
-                  />
-                  <input
-                    value={metric.label}
-                    onChange={(e) => updateMetric(metric.id, { label: e.target.value })}
-                    disabled={disabled}
-                    className="text-sm font-medium text-gray-800 text-center bg-transparent border-none p-0 focus:ring-0 w-full mt-1"
-                    placeholder="Label"
-                  />
-                  {(!disabled || metric.subtext) && (
-                    <input
-                      value={metric.subtext || ""}
-                      onChange={(e) => updateMetric(metric.id, { subtext: e.target.value })}
-                      disabled={disabled}
-                      className="text-[10px] text-gray-500 uppercase tracking-wider text-center bg-transparent border-none p-0 focus:ring-0 w-full mt-1"
-                      placeholder="SUBTEXT (OPTIONAL)"
-                    />
-                  )}
-                </div>
-
-                {/* Style Switcher (no print) */}
-                {!disabled && (
-                  <div className="absolute -bottom-6 left-0 right-0 flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print">
-                    <button onClick={() => updateMetric(metric.id, { style: 'square' })} className={`w-3 h-3 border border-gray-400 ${metric.style === 'square' ? 'bg-gray-400' : ''}`}></button>
-                    <button onClick={() => updateMetric(metric.id, { style: 'circle' })} className={`w-3 h-3 border border-gray-400 rounded-full ${metric.style === 'circle' ? 'bg-gray-400' : ''}`}></button>
-                    <button onClick={() => updateMetric(metric.id, { style: 'minimal' })} className={`w-3 h-3 text-[10px] leading-none ${metric.style === 'minimal' ? 'font-bold' : ''}`}>M</button>
-                  </div>
-                )}
-              </div>
-            ))}
+          
+          {/* Footer Text */}
+          <div style={{ marginTop: 'auto', textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', fontStyle: 'italic', paddingTop: '4rem' }}>
+            {headerPrefix} {departmentName} Report
           </div>
-        )}
-
-        {/* Editor Body */}
-        <EditorContent editor={editor} />
-        
-        {/* Footer Text */}
-        <div className="mt-16 text-center text-xs text-gray-400 italic">
-          {headerPrefix} {departmentName} Report
         </div>
       </div>
 

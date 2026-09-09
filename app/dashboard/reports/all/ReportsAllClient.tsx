@@ -24,8 +24,15 @@ export function ReportsAllClient({
   const [fetching, setFetching] = useState(false);
   const [reportsList, setReportsList] = useState<Report[]>(initialReportsList);
 
+  const [expandedReports, setExpandedReports] = useState<Record<string, boolean>>({});
+
+  const toggleReport = (dept: string) => {
+    setExpandedReports(prev => ({ ...prev, [dept]: !prev[dept] }));
+  };
+
   const fetchReportsForWeek = useCallback(async (dateStr: string) => {
     setFetching(true);
+    setExpandedReports({}); // collapse all when changing week
     try {
       const snap = await getDocs(
         query(collection(db, "reports"), where("target_sunday", "==", dateStr))
@@ -108,10 +115,7 @@ export function ReportsAllClient({
           const report = reportsMap[dept];
           const isSubmitted = report?.status === "SUBMITTED";
           const isDraft = report?.status === "DRAFT";
-
-          // If it's a draft and not submitted, we can either hide it or show it as a draft indicator.
-          // The pastor should probably just see it's a "Draft in progress" but not the content until submitted.
-          // Or they can see the draft content. Let's hide the content until submitted, just show indicator.
+          const isExpanded = expandedReports[dept];
 
           return (
             <section key={dept} className="space-y-2">
@@ -143,10 +147,25 @@ export function ReportsAllClient({
                 >
                   {isSubmitted ? "Submitted" : isDraft ? "Draft in progress" : "Pending"}
                 </span>
+                {isSubmitted && (
+                  <button 
+                    onClick={() => toggleReport(dept)}
+                    className="ml-auto text-xs px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 transition-colors no-print"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {isExpanded ? "Hide Full Report" : "View Full Report"}
+                  </button>
+                )}
               </div>
 
               {isSubmitted ? (
-                <ReadOnlyReport report={report} />
+                isExpanded ? (
+                  <ReadOnlyReport report={report} />
+                ) : (
+                  <div className="p-4 rounded-lg border bg-gray-50 no-print" style={{ borderColor: "var(--border-primary)" }}>
+                    <p className="text-sm text-gray-500 italic">Click "View Full Report" to read the complete A4 document.</p>
+                  </div>
+                )
               ) : (
                 <div
                   className="rounded-lg px-5 py-6 text-center border-dashed border-2"

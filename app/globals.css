@@ -321,7 +321,8 @@ input::placeholder, textarea::placeholder {
 
 /* ─── A4 Page Wrapper ────────────────────────────────────────────────────── */
 .a4-page-wrapper {
-  background: white;
+  background: #ffffff !important;
+  color: #111827 !important; /* Force hex color for html2canvas */
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
@@ -329,6 +330,17 @@ input::placeholder, textarea::placeholder {
   min-height: 1131px; /* approximate A4 height at 96dpi */
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* On large screens, visually scale down the editor to fit better */
+@media screen and (min-width: 768px) {
+  .a4-page-wrapper-container {
+    transform: scale(0.85);
+    transform-origin: top center;
+    margin-bottom: -15%; /* adjust for the scaled space */
+  }
 }
 
 /* ─── Print styles ───────────────────────────────────────────────────────── */
@@ -338,6 +350,11 @@ input::placeholder, textarea::placeholder {
   main { padding: 0 !important; margin: 0 !important; }
   .print-full-width { max-width: 100% !important; width: 100% !important; }
   
+  .a4-page-wrapper-container {
+    transform: none !important;
+    margin: 0 !important;
+  }
+  
   .a4-page-wrapper {
     box-shadow: none !important;
     max-width: none !important;
@@ -345,5 +362,7 @@ input::placeholder, textarea::placeholder {
     min-height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
 }
