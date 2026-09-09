@@ -31,17 +31,27 @@ service cloud.firestore {
       return isAuth() && userDoc().role in ['DEVOTION_LEAD', 'PASTOR', 'LEAD_PASTOR', 'ADMIN'];
     }
 
+    function userDepartments() {
+      let docData = userDoc();
+      let depts = docData.get('departments', []);
+      let oldDept = docData.get('department', '');
+      return depts.size() > 0 ? depts : (oldDept != '' ? [oldDept] : []);
+    }
+
     // ─── Users ─────────────────────────────────────────────────────────
     match /users/{userId} {
       // Any authenticated user can read any user profile (needed for name lookups)
       allow read: if isAuth();
 
+      // Admin can create/update/delete any user (role assignments, department changes)
+      allow write: if isAuth() && (
+        (uid() == userId && resource != null && resource.data.role == 'ADMIN') ||
+        userDoc().role == 'ADMIN'
+      );
+
       // Users can update their OWN profile, but CANNOT change their own role or departments
       allow update: if isAuth() && uid() == userId
                     && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'departments']);
-
-      // Admin can create/update/delete any user (role assignments, department changes)
-      allow write: if isAdmin();
     }
 
     // ─── Reports ───────────────────────────────────────────────────────
@@ -56,8 +66,8 @@ service cloud.firestore {
       // Report ID format: DEPARTMENT_YYYY-MM-DD
       allow create, update: if isAuth()
                             && resource == null
-                               ? request.resource.data.department in userDoc().departments
-                               : resource.data.department in userDoc().departments;
+                               ? request.resource.data.department in userDepartments()
+                               : resource.data.department in userDepartments();
     }
 
     // ─── Tasks ─────────────────────────────────────────────────────────
