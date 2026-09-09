@@ -366,3 +366,14 @@ input::placeholder, textarea::placeholder {
     color: #000000 !important;
   }
 }
+
+/* FORCE A4 REPORT CONTENT TO ALWAYS BE DARK GREY, IGNORING DARK MODE */
+.a4-page-wrapper .tiptap-content h2,
+.a4-page-wrapper .tiptap-content h3,
+.a4-page-wrapper .tiptap-content p,
+.a4-page-wrapper .tiptap-content li,
+.a4-page-wrapper .tiptap-content td,
+.a4-page-wrapper .tiptap-content th,
+.a4-page-wrapper .tiptap-content {
+  color: #111827 !important;
+}

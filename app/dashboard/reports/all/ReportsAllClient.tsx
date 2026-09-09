@@ -169,13 +169,18 @@ export function ReportsAllClient({
                       </div>
                       <div className="flex-1">
                         <h4 style={{ color: '#6b7280', fontWeight: 500, fontSize: '0.75rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                          {dept === "BABCOCK_CAMPUS" ? "IMPRINT BABCOCK CAMPUS" : `IMPRINT GLOBAL ${dept.replace(/_/g, " ").toUpperCase()}`}
+                          {(report as any).custom_header_prefix || (dept === "BABCOCK_CAMPUS" ? "IMPRINT BABCOCK CAMPUS" : `IMPRINT GLOBAL ${dept.replace(/_/g, " ").toUpperCase()}`)}
                         </h4>
                         <h1 style={{ color: '#111827', fontSize: '1.5rem', fontWeight: 700, marginTop: '2px' }}>
-                          {dept === "BABCOCK_CAMPUS" ? "Cell Fellowship" : dept.replace(/_/g, " ")} Report
+                          {(report as any).custom_header_title || `${dept === "BABCOCK_CAMPUS" ? "Cell Fellowship" : dept.replace(/_/g, " ")} Report`}
                         </h1>
                         <p style={{ color: '#6b7280', marginTop: '2px', fontStyle: 'italic', fontSize: '0.875rem' }}>
-                          Date: {new Date(report.target_sunday).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+                          Date: {(() => {
+                            const ts = (report as any).submitted_at || (report as any).last_edited_at;
+                            if (ts && ts.toDate) return ts.toDate().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+                            if (ts) return new Date(ts).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+                            return new Date(report.target_sunday).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+                          })()}
                         </p>
                       </div>
                     </div>

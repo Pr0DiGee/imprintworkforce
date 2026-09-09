@@ -69,8 +69,11 @@ export function ReportEditor({
     },
   });
 
-  const departmentName = department === "BABCOCK_CAMPUS" ? "Cell Fellowship" : department.replace(/_/g, " ");
-  const headerPrefix = department === "BABCOCK_CAMPUS" ? "IMPRINT BABCOCK CAMPUS" : `IMPRINT GLOBAL ${departmentName.toUpperCase()}`;
+  const defaultDepartmentName = department === "BABCOCK_CAMPUS" ? "Cell Fellowship" : department.replace(/_/g, " ");
+  const defaultHeaderPrefix = department === "BABCOCK_CAMPUS" ? "IMPRINT BABCOCK CAMPUS" : `IMPRINT GLOBAL ${defaultDepartmentName.toUpperCase()}`;
+
+  const [headerPrefix, setHeaderPrefix] = useState((existingReport as any)?.custom_header_prefix || defaultHeaderPrefix);
+  const [reportTitle, setReportTitle] = useState((existingReport as any)?.custom_header_title || `${defaultDepartmentName} Report`);
 
   async function handleSave(status: ReportStatus) {
     if (!editor || disabled) return;
@@ -88,6 +91,8 @@ export function ReportEditor({
         await updateDoc(reportRef, {
           content,
           status,
+          custom_header_prefix: headerPrefix,
+          custom_header_title: reportTitle,
           last_edited_by: uid,
           last_edited_at: timestamp,
           ...(status === "SUBMITTED" && existingReport.status !== "SUBMITTED" 
@@ -99,6 +104,8 @@ export function ReportEditor({
           department,
           content,
           status,
+          custom_header_prefix: headerPrefix,
+          custom_header_title: reportTitle,
           last_edited_by: uid,
           created_at: timestamp,
           last_edited_at: timestamp,
@@ -112,6 +119,8 @@ export function ReportEditor({
         department,
         content,
         status,
+        custom_header_prefix: headerPrefix,
+        custom_header_title: reportTitle,
         last_edited_by: uid,
         created_at: existingReport?.created_at as any,
         target_sunday: targetSunday,
@@ -133,7 +142,7 @@ export function ReportEditor({
       const html2pdf = (await import("html2pdf.js")).default;
       const opt = {
         margin: 0,
-        filename: `${departmentName}_Report_${targetSunday}.pdf`,
+        filename: `${defaultDepartmentName}_Report_${targetSunday}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' as const }
@@ -153,7 +162,7 @@ export function ReportEditor({
       const html2pdf = (await import("html2pdf.js")).default;
       const opt = {
         margin: 0,
-        filename: `${departmentName}_Report_${targetSunday}.pdf`,
+        filename: `${defaultDepartmentName}_Report_${targetSunday}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' as const }
@@ -161,7 +170,7 @@ export function ReportEditor({
       
       const pdfBase64 = await html2pdf().set(opt).from(pageRef.current).outputPdf('datauristring');
       
-      const subject = `Weekly Report - ${departmentName} - ${targetSunday}`;
+      const subject = `Weekly Report - ${defaultDepartmentName} - ${targetSunday}`;
       
       const res = await fetch("/api/send", {
         method: "POST",
@@ -169,9 +178,9 @@ export function ReportEditor({
         body: JSON.stringify({
           to: "imprintglobalministry@gmail.com",
           subject,
-          html: `<p>Please find attached the weekly report for ${departmentName} for ${targetSunday}.</p>`,
+          html: `<p>Please find attached the weekly report for ${defaultDepartmentName} for ${targetSunday}.</p>`,
           attachment: {
-            filename: `${departmentName}_Report_${targetSunday}.pdf`,
+            filename: `${defaultDepartmentName}_Report_${targetSunday}.pdf`,
             content: pdfBase64,
           }
         }),
@@ -198,7 +207,7 @@ export function ReportEditor({
       const html2pdf = (await import("html2pdf.js")).default;
       const opt = {
         margin: 0,
-        filename: `${departmentName}_Report_${targetSunday}_TEST.pdf`,
+        filename: `${defaultDepartmentName}_Report_${targetSunday}_TEST.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' as const }
@@ -206,7 +215,7 @@ export function ReportEditor({
       
       const pdfBase64 = await html2pdf().set(opt).from(pageRef.current).outputPdf('datauristring');
       
-      const subject = `[TEST] Weekly Report - ${departmentName} - ${targetSunday}`;
+      const subject = `[TEST] Weekly Report - ${defaultDepartmentName} - ${targetSunday}`;
       
       const res = await fetch("/api/send", {
         method: "POST",
@@ -214,9 +223,9 @@ export function ReportEditor({
         body: JSON.stringify({
           to: "zubbyobunadike@gmail.com",
           subject,
-          html: `<p>This is a TEST. Please find attached the weekly report for ${departmentName} for ${targetSunday}.</p>`,
+          html: `<p>This is a TEST. Please find attached the weekly report for ${defaultDepartmentName} for ${targetSunday}.</p>`,
           attachment: {
-            filename: `${departmentName}_Report_${targetSunday}_TEST.pdf`,
+            filename: `${defaultDepartmentName}_Report_${targetSunday}_TEST.pdf`,
             content: pdfBase64,
           }
         }),
@@ -271,9 +280,23 @@ export function ReportEditor({
               <Image src="/logo.png" alt="Logo" width={80} height={80} className="object-contain" />
             </div>
             <div className="flex-1">
-              <h4 style={{ color: '#6b7280', fontWeight: 500, fontSize: '0.875rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{headerPrefix}</h4>
-              <h1 style={{ color: '#111827', fontSize: '1.875rem', fontWeight: 700, marginTop: '4px' }}>{departmentName} Report</h1>
-              <p style={{ color: '#6b7280', marginTop: '4px', fontStyle: 'italic' }}>
+              <input 
+                type="text" 
+                value={headerPrefix} 
+                onChange={(e) => setHeaderPrefix(e.target.value)}
+                disabled={disabled}
+                className="w-full bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 -ml-1 transition-all"
+                style={{ color: '#6b7280', fontWeight: 500, fontSize: '0.875rem', letterSpacing: '0.05em', textTransform: 'uppercase' }} 
+              />
+              <input 
+                type="text" 
+                value={reportTitle} 
+                onChange={(e) => setReportTitle(e.target.value)}
+                disabled={disabled}
+                className="w-full bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 -ml-1 transition-all"
+                style={{ color: '#111827', fontSize: '1.875rem', fontWeight: 700, marginTop: '4px' }} 
+              />
+              <p style={{ color: '#6b7280', marginTop: '4px', fontStyle: 'italic', paddingLeft: '4px' }}>
                 Date: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
               </p>
             </div>
@@ -289,7 +312,7 @@ export function ReportEditor({
           
           {/* Footer Text */}
           <div style={{ marginTop: 'auto', textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', fontStyle: 'italic', paddingTop: '4rem' }}>
-            {headerPrefix} {departmentName} Report
+            {headerPrefix} {defaultDepartmentName} Report
           </div>
         </div>
       </div>

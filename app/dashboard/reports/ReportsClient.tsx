@@ -28,10 +28,11 @@ export function ReportsClient({
   );
 
   const [report, setReport] = useState<Report | null>(initialReport);
+  const [editorMode, setEditorMode] = useState<"PROMPT" | "CONTINUE" | "NEW">(initialReport ? "PROMPT" : "NEW");
   const [fetching, setFetching] = useState(false);
   const [targetSunday, setTargetSunday] = useState(currentSunday);
 
-  const isReadOnly = targetSunday !== currentSunday;
+  const isReadOnly = false;
 
   async function handleWeekOrDeptChange(newSunday: string, newDept: Department | "") {
     if (!newDept) return;
@@ -42,8 +43,10 @@ export function ReportsClient({
       const snap = await getDoc(doc(db, "reports", docId));
       if (snap.exists()) {
         setReport({ id: snap.id, ...snap.data() } as Report);
+        setEditorMode("PROMPT");
       } else {
         setReport(null);
+        setEditorMode("NEW");
       }
     } catch (err) {
       console.error(err);
@@ -203,15 +206,47 @@ export function ReportsClient({
           <div className="h-64 bg-black/5 rounded-lg" />
         </div>
       ) : activeDept ? (
-        <ReportEditor
-          key={`${activeDept}_${targetSunday}`}
-          existingReport={report}
-          department={activeDept}
-          uid={user.uid}
-          targetSunday={targetSunday}
-          disabled={isReadOnly}
-          onSaved={(saved) => setReport(saved)}
-        />
+        editorMode === "PROMPT" && !isReadOnly ? (
+          <div className="bg-card p-8 rounded-xl border text-center space-y-5" style={{ background: "var(--bg-card)", borderColor: "var(--border-primary)" }}>
+            <h3 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>An existing report was found</h3>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+              There is already a {report?.status === "SUBMITTED" ? "submitted" : "draft"} report for this department this week.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4">
+              <button
+                onClick={() => setEditorMode("CONTINUE")}
+                className="btn px-6 py-2.5"
+                style={{ background: "var(--accent)", color: "var(--text-inverse)" }}
+              >
+                Continue Existing Report
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm("Are you sure? This will overwrite the existing report when you save.")) {
+                    setEditorMode("NEW");
+                  }
+                }}
+                className="btn px-6 py-2.5"
+                style={{ background: "var(--bg-elevated)", color: "var(--danger)", border: "1px solid var(--danger)" }}
+              >
+                Create New Report (Overwrite)
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ReportEditor
+            key={`${activeDept}_${targetSunday}_${editorMode}`}
+            existingReport={editorMode === "NEW" ? null : report}
+            department={activeDept}
+            uid={user.uid}
+            targetSunday={targetSunday}
+            disabled={isReadOnly}
+            onSaved={(saved) => {
+              setReport(saved);
+              setEditorMode("CONTINUE");
+            }}
+          />
+        )
       ) : null}
     </div>
   );

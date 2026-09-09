@@ -88,6 +88,8 @@ export interface Report {
   content: string;
   metrics?: ReportMetric[];
   status: ReportStatus;
+  custom_header_prefix?: string;
+  custom_header_title?: string;
   last_edited_by: string; // uid
   submitted_by?: string; // uid of person who submitted
   created_at: Timestamp;
