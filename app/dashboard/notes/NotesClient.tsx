@@ -237,6 +237,17 @@ export function NotesClient({
   // Saving state
   const [saving, setSaving] = useState(false);
 
+  const QUICK_NOTES_FOLDER: NoteFolder = {
+    id: "quick-notes",
+    user_id: user.uid,
+    name: "Quick Notes",
+    color: "#64748b", // slate
+    created_at: new Date() as any,
+    updated_at: new Date() as any,
+  };
+
+  const displayFolders = [QUICK_NOTES_FOLDER, ...folders];
+
   // ── Folder CRUD ───────────────────────────────────────────────────────────────
 
   const handleCreateFolder = async () => {
@@ -288,6 +299,7 @@ export function NotesClient({
   };
 
   const handleDeleteFolder = async (folder: NoteFolder) => {
+    if (folder.id === "quick-notes") return;
     const count = noteCounts[folder.id!] || 0;
     const msg =
       count > 0
@@ -651,14 +663,29 @@ export function NotesClient({
             Organize your notes into folders
           </p>
         </div>
-        <button
-          onClick={() => setShowNewFolder(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
-          style={{ background: "var(--accent)", color: "var(--text-inverse)" }}
-        >
-          <FolderPlus size={16} />
-          New Folder
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setActiveFolder(QUICK_NOTES_FOLDER);
+              setIsNewNote(true);
+              setActiveNote(null);
+              setView("editor");
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
+            style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--border-primary)" }}
+          >
+            <Plus size={16} />
+            Quick Note
+          </button>
+          <button
+            onClick={() => setShowNewFolder(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
+            style={{ background: "var(--accent)", color: "var(--text-inverse)" }}
+          >
+            <FolderPlus size={16} />
+            New Folder
+          </button>
+        </div>
       </div>
 
       {/* New folder form */}
@@ -742,7 +769,7 @@ export function NotesClient({
       )}
 
       {/* Folders grid */}
-      {folders.length === 0 && !showNewFolder ? (
+      {displayFolders.length === 0 && !showNewFolder ? (
         <div
           className="text-center py-20 rounded-xl"
           style={{
@@ -770,7 +797,7 @@ export function NotesClient({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {folders.map((folder) => (
+          {displayFolders.map((folder) => (
             <div
               key={folder.id}
               className="group rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.02]"
@@ -833,30 +860,32 @@ export function NotesClient({
                     </div>
 
                     {/* Actions menu */}
-                    <div
-                      className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={() => {
-                          setEditingFolderId(folder.id!);
-                          setEditFolderName(folder.name);
-                        }}
-                        className="p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                        style={{ color: "var(--text-muted)" }}
-                        title="Rename"
+                    {folder.id !== "quick-notes" && (
+                      <div
+                        className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Pencil size={13} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteFolder(folder)}
-                        className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
-                        style={{ color: "var(--danger)" }}
-                        title="Delete"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
+                        <button
+                          onClick={() => {
+                            setEditingFolderId(folder.id!);
+                            setEditFolderName(folder.name);
+                          }}
+                          className="p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                          style={{ color: "var(--text-muted)" }}
+                          title="Rename"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteFolder(folder)}
+                          className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                          style={{ color: "var(--danger)" }}
+                          title="Delete"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <h3

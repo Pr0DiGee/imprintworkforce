@@ -252,11 +252,11 @@ export function ReportEditor({
           <ToolbarBtn title="Ordered list" onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive("orderedList")}>1. List</ToolbarBtn>
           <span className="w-px h-5 mx-1" style={{ background: "var(--border-primary)" }} />
           <ToolbarBtn title="Insert Table" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>Table</ToolbarBtn>
-          <ToolbarBtn title="Add Row" onClick={() => editor.chain().focus().addRowAfter().run()} disabled={!editor.isActive("table")}>+Row</ToolbarBtn>
-          <ToolbarBtn title="Add Col" onClick={() => editor.chain().focus().addColumnAfter().run()} disabled={!editor.isActive("table")}>+Col</ToolbarBtn>
-          <ToolbarBtn title="Del Row" onClick={() => editor.chain().focus().deleteRow().run()} disabled={!editor.isActive("table")}>-Row</ToolbarBtn>
-          <ToolbarBtn title="Del Col" onClick={() => editor.chain().focus().deleteColumn().run()} disabled={!editor.isActive("table")}>-Col</ToolbarBtn>
-          <ToolbarBtn title="Delete Table" onClick={() => editor.chain().focus().deleteTable().run()} disabled={!editor.isActive("table")}>Del Table</ToolbarBtn>
+          <ToolbarBtn title="Add Row" onClick={() => editor.chain().focus().addRowAfter().run()} disabled={!editor.can().addRowAfter()}>+Row</ToolbarBtn>
+          <ToolbarBtn title="Add Col" onClick={() => editor.chain().focus().addColumnAfter().run()} disabled={!editor.can().addColumnAfter()}>+Col</ToolbarBtn>
+          <ToolbarBtn title="Del Row" onClick={() => editor.chain().focus().deleteRow().run()} disabled={!editor.can().deleteRow()}>-Row</ToolbarBtn>
+          <ToolbarBtn title="Del Col" onClick={() => editor.chain().focus().deleteColumn().run()} disabled={!editor.can().deleteColumn()}>-Col</ToolbarBtn>
+          <ToolbarBtn title="Delete Table" onClick={() => editor.chain().focus().deleteTable().run()} disabled={!editor.can().deleteTable()}>Del Table</ToolbarBtn>
         </div>
       )}
 

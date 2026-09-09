@@ -162,8 +162,24 @@ export function ReportsAllClient({
                 isExpanded ? (
                   <ReadOnlyReport report={report} />
                 ) : (
-                  <div className="p-4 rounded-lg border bg-gray-50 no-print" style={{ borderColor: "var(--border-primary)" }}>
-                    <p className="text-sm text-gray-500 italic">Click "View Full Report" to read the complete A4 document.</p>
+                  <div className="p-6 rounded-lg border bg-white no-print" style={{ borderColor: "var(--border-primary)" }}>
+                    <div className="flex items-center gap-6 mb-6">
+                      <div className="shrink-0">
+                        <img src="/logo.png" alt="Logo" width={60} height={60} className="object-contain" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 style={{ color: '#6b7280', fontWeight: 500, fontSize: '0.75rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                          {dept === "BABCOCK_CAMPUS" ? "IMPRINT BABCOCK CAMPUS" : `IMPRINT GLOBAL ${dept.replace(/_/g, " ").toUpperCase()}`}
+                        </h4>
+                        <h1 style={{ color: '#111827', fontSize: '1.5rem', fontWeight: 700, marginTop: '2px' }}>
+                          {dept === "BABCOCK_CAMPUS" ? "Cell Fellowship" : dept.replace(/_/g, " ")} Report
+                        </h1>
+                        <p style={{ color: '#6b7280', marginTop: '2px', fontStyle: 'italic', fontSize: '0.875rem' }}>
+                          Date: {new Date(report.target_sunday).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                    <div style={{ width: '100%', height: '2px', backgroundColor: '#b91c1c' }}></div>
                   </div>
                 )
               ) : (
