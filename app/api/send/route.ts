@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // To make this route handle POST requests
 export async function POST(request: Request) {
   try {
-    const { to, subject, html } = await request.json();
+    const { to, subject, html, attachment } = await request.json();
 
     if (!to || !subject || !html) {
       return NextResponse.json(
@@ -15,11 +15,20 @@ export async function POST(request: Request) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
+    const attachments = [];
+    if (attachment && attachment.content && attachment.filename) {
+      attachments.push({
+        filename: attachment.filename,
+        content: attachment.content.split("base64,")[1] || attachment.content,
+      });
+    }
+
     const data = await resend.emails.send({
       from: "Church OS <onboarding@resend.dev>", // replace with your verified domain
       to,
       subject,
       html,
+      attachments,
     });
 
     return NextResponse.json(data);

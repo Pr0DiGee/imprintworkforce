@@ -71,11 +71,22 @@ export interface UserProfile {
 
 export type ReportStatus = "DRAFT" | "SUBMITTED";
 
+export type ReportMetricStyle = "square" | "circle" | "minimal";
+
+export interface ReportMetric {
+  id: string;
+  value: string;
+  label: string;
+  subtext?: string;
+  style: ReportMetricStyle;
+}
+
 export interface Report {
   id?: string;
   department: Department;
   /** Stringified Tiptap JSON document */
   content: string;
+  metrics?: ReportMetric[];
   status: ReportStatus;
   last_edited_by: string; // uid
   submitted_by?: string; // uid of person who submitted
