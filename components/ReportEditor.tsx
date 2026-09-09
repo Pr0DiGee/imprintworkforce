@@ -69,7 +69,7 @@ export function ReportEditor({
     },
   });
 
-  const defaultDepartmentName = department === "BABCOCK_CAMPUS" ? "Cell Fellowship" : department.replace(/_/g, " ");
+  const defaultDepartmentName = department === "BABCOCK_CAMPUS" ? "Cell Fellowship" : department === "MEDIA" ? "Media Team" : department.replace(/_/g, " ");
   const defaultHeaderPrefix = department === "BABCOCK_CAMPUS" ? "IMPRINT BABCOCK CAMPUS" : `IMPRINT GLOBAL ${defaultDepartmentName.toUpperCase()}`;
 
   const [headerPrefix, setHeaderPrefix] = useState((existingReport as any)?.custom_header_prefix || defaultHeaderPrefix);
@@ -285,16 +285,16 @@ export function ReportEditor({
                 value={headerPrefix} 
                 onChange={(e) => setHeaderPrefix(e.target.value)}
                 disabled={disabled}
-                className="w-full bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 -ml-1 transition-all"
-                style={{ color: '#6b7280', fontWeight: 500, fontSize: '0.875rem', letterSpacing: '0.05em', textTransform: 'uppercase' }} 
+                className="w-full !bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 -ml-1 transition-all !text-gray-500"
+                style={{ fontWeight: 500, fontSize: '0.875rem', letterSpacing: '0.05em', textTransform: 'uppercase' }} 
               />
               <input 
                 type="text" 
                 value={reportTitle} 
                 onChange={(e) => setReportTitle(e.target.value)}
                 disabled={disabled}
-                className="w-full bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 -ml-1 transition-all"
-                style={{ color: '#111827', fontSize: '1.875rem', fontWeight: 700, marginTop: '4px' }} 
+                className="w-full !bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 -ml-1 transition-all !text-[#111827]"
+                style={{ fontSize: '1.875rem', fontWeight: 700, marginTop: '4px' }} 
               />
               <p style={{ color: '#6b7280', marginTop: '4px', fontStyle: 'italic', paddingLeft: '4px' }}>
                 Date: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
@@ -312,7 +312,7 @@ export function ReportEditor({
           
           {/* Footer Text */}
           <div style={{ marginTop: 'auto', textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', fontStyle: 'italic', paddingTop: '4rem' }}>
-            {headerPrefix} {defaultDepartmentName} Report
+            {headerPrefix} Report
           </div>
         </div>
       </div>
