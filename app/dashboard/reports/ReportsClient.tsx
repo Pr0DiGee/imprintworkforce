@@ -32,7 +32,17 @@ export function ReportsClient({
   const [fetching, setFetching] = useState(false);
   const [targetSunday, setTargetSunday] = useState(currentSunday);
 
-  const isReadOnly = false;
+  let isReadOnly = false;
+  if (report?.status === "SUBMITTED" && report.submitted_at) {
+    const submittedTime = (report.submitted_at as any).toDate 
+      ? (report.submitted_at as any).toDate().getTime() 
+      : new Date(report.submitted_at as unknown as string).getTime();
+    const now = new Date().getTime();
+    const hoursSinceSubmission = (now - submittedTime) / (1000 * 60 * 60);
+    if (hoursSinceSubmission > 24) {
+      isReadOnly = true;
+    }
+  }
 
   async function handleWeekOrDeptChange(newSunday: string, newDept: Department | "") {
     if (!newDept) return;
@@ -206,7 +216,13 @@ export function ReportsClient({
           <div className="h-64 bg-black/5 rounded-lg" />
         </div>
       ) : activeDept ? (
-        editorMode === "PROMPT" && !isReadOnly ? (
+        <>
+          {isReadOnly && report?.status === "SUBMITTED" && (
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm mb-4">
+              <strong>Locked:</strong> This report was submitted over 24 hours ago and can no longer be edited.
+            </div>
+          )}
+          {editorMode === "PROMPT" && !isReadOnly ? (
           <div className="bg-card p-8 rounded-xl border text-center space-y-5" style={{ background: "var(--bg-card)", borderColor: "var(--border-primary)" }}>
             <h3 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>An existing report was found</h3>
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
@@ -246,7 +262,8 @@ export function ReportsClient({
               setEditorMode("CONTINUE");
             }}
           />
-        )
+        )}
+        </>
       ) : null}
     </div>
   );
