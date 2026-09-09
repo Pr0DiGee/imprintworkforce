@@ -181,7 +181,11 @@ export function ReportEditor({
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to send email");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData?.error?.message || "Failed to send email");
+      }
+      
       success("Report forwarded to church email!");
     } catch (err) {
       error(err instanceof Error ? err.message : "An error occurred while emailing.");
@@ -222,7 +226,11 @@ export function ReportEditor({
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to send test email");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData?.error?.message || "Failed to send test email");
+      }
+      
       success("Test report forwarded to your email!");
     } catch (err) {
       error(err instanceof Error ? err.message : "An error occurred while emailing.");

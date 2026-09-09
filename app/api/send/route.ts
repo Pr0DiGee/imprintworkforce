@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const data = await resend.emails.send({
+    const resendResponse = await resend.emails.send({
       from: "Church OS <onboarding@resend.dev>", // replace with your verified domain
       to,
       subject,
@@ -31,7 +31,12 @@ export async function POST(request: Request) {
       attachments,
     });
 
-    return NextResponse.json(data);
+    if (resendResponse.error) {
+      console.error("Resend API Error:", resendResponse.error);
+      return NextResponse.json({ error: resendResponse.error }, { status: 400 });
+    }
+
+    return NextResponse.json(resendResponse.data);
   } catch (error) {
     console.error("Email send error:", error);
     return NextResponse.json({ error }, { status: 500 });
