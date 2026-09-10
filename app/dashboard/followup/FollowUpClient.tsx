@@ -335,17 +335,29 @@ function ContactCard({
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between">
-              <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                {latestLog ? (
-                  <span>
-                    Last: {latestLog.method} • {formatRelativeCheckInDate(latestLog.logged_at as any)}
-                  </span>
-                ) : (
-                  <span>No activity yet</span>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  {latestLog ? (
+                    <span>
+                      Last: {latestLog.method} • {formatRelativeCheckInDate(latestLog.logged_at as any)}
+                    </span>
+                  ) : (
+                    <span>No activity yet</span>
+                  )}
+                </div>
+                {!readOnly && (
+                  <button
+                    onClick={() => setLogging(true)}
+                    className="text-xs font-medium px-3 py-1.5 rounded transition-colors"
+                    style={{ background: completedThisWeek ? "var(--bg-input)" : "var(--accent)", color: completedThisWeek ? "var(--text-primary)" : "#fff" }}
+                  >
+                    {completedThisWeek ? "Log Again" : "Log Activity"}
+                  </button>
                 )}
               </div>
-              <div className="text-xs mt-3 pt-3 border-t" style={{ borderColor: "var(--border-primary)" }}>
+
+              <div className="text-xs pt-3 border-t" style={{ borderColor: "var(--border-primary)" }}>
                 <button 
                   onClick={() => setShowHistory(!showHistory)}
                   className="flex items-center justify-between w-full hover:opacity-80 transition-opacity"
@@ -372,15 +384,6 @@ function ContactCard({
                   </div>
                 )}
               </div>
-              {!readOnly && (
-                <button
-                  onClick={() => setLogging(true)}
-                  className="text-xs font-medium px-3 py-1.5 rounded transition-colors"
-                  style={{ background: completedThisWeek ? "var(--bg-input)" : "var(--accent)", color: completedThisWeek ? "var(--text-primary)" : "#fff" }}
-                >
-                  {completedThisWeek ? "Log Again" : "Log Activity"}
-                </button>
-              )}
             </div>
           )}
         </div>

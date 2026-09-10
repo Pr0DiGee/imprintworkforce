@@ -162,13 +162,7 @@ input::placeholder, textarea::placeholder {
   gap: 0.5rem;
 }
 
-.tiptap-content h2::before {
-  content: "";
-  display: block;
-  width: 12px;
-  height: 12px;
-  background-color: #b91c1c;
-}
+
 
 .tiptap-content h3 {
   font-size: 1.125rem;
@@ -181,13 +175,7 @@ input::placeholder, textarea::placeholder {
   gap: 0.4rem;
 }
 
-.tiptap-content h3::before {
-  content: "";
-  display: block;
-  width: 10px;
-  height: 10px;
-  background-color: #b91c1c;
-}
+
 
 .tiptap-content p {
   margin-bottom: 0.75rem;
