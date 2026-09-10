@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { FollowUpContact, FollowUpLog } from "@/types";
 import { Search } from "lucide-react";
 
@@ -15,6 +15,7 @@ import { formatRelativeCheckInDate } from "@/lib/date";
 
 export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: GlobalFollowUpTableProps) {
   const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filteredContacts = contacts.filter(c => {
     if (!search) return true;
@@ -63,14 +64,18 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: G
               <th className="text-left px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Last Check-in</th>
               <th className="text-left px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Method</th>
               <th className="text-left px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Comments</th>
+              <th className="text-right px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>History</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)]">
             {sortedContacts.map(contact => {
               const latestLog = getLatestLog(contact.id!);
+              const contactLogs = logs.filter(l => l.contact_id === contact.id);
+              const isExpanded = expandedId === contact.id;
               
               return (
-                <tr key={contact.id} className="transition-colors hover:bg-black/5 dark:hover:bg-white/5">
+                <React.Fragment key={contact.id}>
+                <tr className="transition-colors hover:bg-black/5 dark:hover:bg-white/5">
                   <td className="px-4 py-3">
                     <div className="font-medium" style={{ color: "var(--text-primary)" }}>{contact.name}</div>
                     <div className="text-xs" style={{ color: "var(--text-muted)" }}>{contact.phone}</div>
@@ -97,13 +102,46 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: G
                       {latestLog?.notes || <span className="italic text-[var(--text-muted)]">No comments</span>}
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <button 
+                      onClick={() => setExpandedId(isExpanded ? null : contact.id!)}
+                      className="text-xs font-medium px-3 py-1.5 rounded transition-colors"
+                      style={{ background: isExpanded ? "var(--accent)" : "var(--bg-input)", color: isExpanded ? "#fff" : "var(--text-primary)" }}
+                    >
+                      {isExpanded ? "Hide" : `View (${contactLogs.length})`}
+                    </button>
+                  </td>
                 </tr>
+                {isExpanded && contactLogs.length > 0 && (
+                  <tr>
+                    <td colSpan={6} className="p-0">
+                      <div className="bg-black/5 dark:bg-white/5 p-4 inset-shadow-sm border-b border-[var(--border-primary)]">
+                        <h4 className="text-xs font-semibold mb-3" style={{ color: "var(--text-secondary)" }}>Log History ({contactLogs.length})</h4>
+                        <div className="space-y-2">
+                          {contactLogs.map(log => (
+                            <div key={log.id} className="bg-[var(--bg-card)] p-3 rounded border border-[var(--border-primary)] shadow-sm">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{log.method}</span>
+                                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{formatRelativeCheckInDate(log.logged_at as any)}</span>
+                              </div>
+                              {log.notes && <p className="text-sm mb-2" style={{ color: "var(--text-secondary)" }}>{log.notes}</p>}
+                              <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+                                By: {userMap[log.worker_id] || "Unknown"}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               );
             })}
             
             {sortedContacts.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-[var(--text-muted)] italic text-sm">
+                <td colSpan={6} className="px-4 py-8 text-center text-[var(--text-muted)] italic text-sm">
                   No follow-ups found.
                 </td>
               </tr>
