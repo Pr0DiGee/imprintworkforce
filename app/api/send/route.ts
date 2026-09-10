@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     const resendResponse = await resend.emails.send({
-      from: "Church OS <onboarding@resend.dev>", // replace with your verified domain
+      from: "Imprint Workforce <onboarding@resend.dev>", // replace with your verified domain
       to,
       subject,
       html,

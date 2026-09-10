@@ -331,15 +331,6 @@ export function ReportEditor({
           {existingReport?.status === "SUBMITTED" && !hideForwardButton && (
             <>
               <button
-                onClick={handleTestEmail}
-                disabled={sendingEmail}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
-                style={{ background: "#f59e0b" }} // Amber color for test
-              >
-                <Mail size={16} />
-                {sendingEmail ? "Sending..." : "Test Email"}
-              </button>
-              <button
                 onClick={handleForwardEmail}
                 disabled={sendingEmail}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"

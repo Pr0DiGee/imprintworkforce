@@ -146,7 +146,7 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
                   user={user}
                   userMap={userMap}
                   completedThisWeek={completedThisWeek}
-                  latestLog={latestLog}
+                  latestLog={latestLog} contactLogs={logs.filter(l => l.contact_id === contact.id)}
                   targetSunday={targetSunday}
                   readOnly={false}
                 />
@@ -185,7 +185,7 @@ function ContactCard({
   user,
   userMap,
   completedThisWeek,
-  latestLog,
+  latestLog, contactLogs,
   targetSunday,
   readOnly
 }: {
@@ -198,6 +198,7 @@ function ContactCard({
   readOnly: boolean;
 }) {
   const [logging, setLogging] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [logMethod, setLogMethod] = useState<FollowUpMethod>("CALL");
   const [logNotes, setLogNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -341,6 +342,33 @@ function ContactCard({
                   </span>
                 ) : (
                   <span>No activity yet</span>
+                )}
+              </div>
+              <div className="text-xs mt-3 pt-3 border-t" style={{ borderColor: "var(--border-primary)" }}>
+                <button 
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="flex items-center justify-between w-full hover:opacity-80 transition-opacity"
+                >
+                  <span className="font-medium" style={{ color: "var(--text-primary)" }}>
+                    Total Logs: {contactLogs ? contactLogs.length : 0}
+                  </span>
+                  <span style={{ color: "var(--accent)" }}>{showHistory ? "Hide History" : "View History"}</span>
+                </button>
+                {showHistory && contactLogs && contactLogs.length > 0 && (
+                  <div className="mt-2 space-y-2 max-h-40 overflow-y-auto pr-1">
+                    {contactLogs.map(log => (
+                      <div key={log.id} className="p-2 rounded bg-black/5 dark:bg-white/5">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{log.method}</span>
+                          <span style={{ color: "var(--text-muted)" }}>{formatRelativeCheckInDate(log.logged_at as any)}</span>
+                        </div>
+                        {log.notes && <p style={{ color: "var(--text-secondary)" }}>{log.notes}</p>}
+                        <div className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                          By: {userMap[log.worker_id] || "Unknown"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
               {!readOnly && (

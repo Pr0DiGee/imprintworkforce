@@ -185,14 +185,14 @@ function NoteEditor({
           borderTop: "1px solid var(--border-primary)",
         }}
       >
-        <button type="button" onClick={onCancel} disabled={saving} className="btn">
+        <button type="button" onClick={onCancel} disabled={saving} className="px-4 py-2 text-sm font-medium rounded-md transition-colors">
           Cancel
         </button>
         <button
           type="button"
           onClick={() => onSave(title, JSON.stringify(editor.getJSON()))}
           disabled={saving || !title.trim()}
-          className="btn"
+          className="px-4 py-2 text-sm font-medium rounded-md transition-colors"
           style={{
             background: "var(--accent)",
             color: "var(--text-inverse)",
@@ -747,7 +747,7 @@ export function NotesClient({
                 setShowNewFolder(false);
                 setNewFolderName("");
               }}
-              className="btn text-sm"
+              className="px-4 py-2 text-sm font-medium rounded-md transition-colors"
             >
               Cancel
             </button>
@@ -755,7 +755,7 @@ export function NotesClient({
               type="button"
               onClick={handleCreateFolder}
               disabled={saving || !newFolderName.trim()}
-              className="btn text-sm"
+              className="px-4 py-2 text-sm font-medium rounded-md transition-colors"
               style={{
                 background: "var(--accent)",
                 color: "var(--text-inverse)",

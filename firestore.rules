@@ -20,11 +20,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuth() && userDoc().role == 'ADMIN';
+      return isAuth() && userDoc().role in ['ADMIN', 'admin', 'SYSTEM_ADMIN'];
     }
 
     function isPastorPlus() {
-      return isAuth() && userDoc().role in ['PASTOR', 'LEAD_PASTOR', 'ADMIN'];
+      return isAuth() && userDoc().role in ['PASTOR', 'LEAD_PASTOR', 'ADMIN', 'admin', 'SYSTEM_ADMIN'];
     }
 
     function canEditDevotion() {
