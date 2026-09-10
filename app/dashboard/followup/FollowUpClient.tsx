@@ -194,6 +194,7 @@ function ContactCard({
   userMap: Record<string, string>;
   completedThisWeek: boolean;
   latestLog?: FollowUpLog;
+  contactLogs: FollowUpLog[];
   targetSunday: string;
   readOnly: boolean;
 }) {
