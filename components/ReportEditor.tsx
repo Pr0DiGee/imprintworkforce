@@ -274,18 +274,18 @@ export function ReportEditor({
         <div className="a4-page-wrapper p-8 sm:p-12 overflow-x-auto" ref={pageRef}>
           
           {/* Header */}
-          <div className="flex items-center gap-6 mb-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 mb-6 text-center sm:text-left">
             <div className="shrink-0">
               {/* The logo from public/logo.png */}
               <Image src="/logo.png" alt="Logo" width={80} height={80} className="object-contain" />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 w-full flex flex-col items-center sm:items-start">
               <input 
                 type="text" 
                 value={headerPrefix} 
                 onChange={(e) => setHeaderPrefix(e.target.value)}
                 disabled={disabled}
-                className="w-full !bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 -ml-1 transition-all !text-gray-500"
+                className="w-full !bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 -ml-1 transition-all !text-gray-500 text-center sm:text-left"
                 style={{ fontWeight: 500, fontSize: '0.875rem', letterSpacing: '0.05em', textTransform: 'uppercase' }} 
               />
               <input 
@@ -293,7 +293,7 @@ export function ReportEditor({
                 value={reportTitle} 
                 onChange={(e) => setReportTitle(e.target.value)}
                 disabled={disabled}
-                className="w-full !bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 -ml-1 transition-all !text-[#111827]"
+                className="w-full !bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 -ml-1 transition-all !text-[#111827] text-center sm:text-left"
                 style={{ fontSize: '1.875rem', fontWeight: 700, marginTop: '4px' }} 
               />
               <p style={{ color: '#6b7280', marginTop: '4px', fontStyle: 'italic', paddingLeft: '4px' }}>
@@ -318,38 +318,36 @@ export function ReportEditor({
       </div>
 
       {/* Action Footer */}
-      <div className="flex items-center justify-between px-4 py-3 rounded-lg no-print" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-primary)" }}>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 px-4 py-3 rounded-lg no-print" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-primary)" }}>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <button
             onClick={handleDownloadPDF}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors hover:bg-gray-100 border border-gray-200"
+            className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors hover:bg-gray-100 border border-gray-200"
           >
             <Download size={16} />
             Save as PDF
           </button>
           
-          {existingReport?.status === "SUBMITTED" && !hideForwardButton && (
-            <>
-              <button
-                onClick={handleForwardEmail}
-                disabled={sendingEmail}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
-                style={{ background: "var(--accent)" }}
-              >
-                <Mail size={16} />
-                {sendingEmail ? "Sending..." : "Forward to Church Email"}
-              </button>
-            </>
+          {!hideForwardButton && (
+            <button
+              onClick={handleForwardEmail}
+              disabled={sendingEmail}
+              className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
+              style={{ background: "var(--accent)" }}
+            >
+              <Mail size={16} />
+              {sendingEmail ? "Sending..." : "Forward to Church Email"}
+            </button>
           )}
         </div>
 
         {!disabled && (
-          <div className="flex gap-3 relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative">
             {existingReport?.status === "SUBMITTED" ? (
               <button
                 onClick={() => handleSave("SUBMITTED")}
                 disabled={saving}
-                className="px-4 py-1.5 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-70"
+                className="flex justify-center items-center px-4 py-1.5 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-70"
                 style={{ background: "var(--accent)" }}
               >
                 {saving ? "Updating…" : "Update Report"}
@@ -359,7 +357,7 @@ export function ReportEditor({
                 <button
                   onClick={() => handleSave("DRAFT")}
                   disabled={saving}
-                  className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors disabled:opacity-70"
+                  className="flex justify-center items-center px-4 py-1.5 text-sm font-medium rounded-md transition-colors disabled:opacity-70"
                   style={{ color: "var(--accent)", border: "1px solid var(--accent)" }}
                 >
                   {saving ? "Saving…" : "Save Draft"}
@@ -367,7 +365,7 @@ export function ReportEditor({
                 <button
                   onClick={() => setConfirmSubmit(true)}
                   disabled={saving}
-                  className="px-4 py-1.5 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-70"
+                  className="flex justify-center items-center px-4 py-1.5 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-70"
                   style={{ background: "var(--accent)" }}
                 >
                   Submit Report

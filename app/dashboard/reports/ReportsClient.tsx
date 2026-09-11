@@ -129,7 +129,7 @@ export function ReportsClient({
         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 no-print bg-card p-3 rounded-lg border"
         style={{ background: "var(--bg-card)", borderColor: "var(--border-primary)" }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <WeekPicker
             value={targetSunday}
             onChange={(val) => {

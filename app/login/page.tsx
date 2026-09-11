@@ -306,7 +306,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right split screen - Forms */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-12 relative min-h-screen md:min-h-0">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative min-h-screen md:min-h-0">
         
         {/* Mobile Branding */}
         <div className="mb-8 md:hidden flex items-center gap-3">
