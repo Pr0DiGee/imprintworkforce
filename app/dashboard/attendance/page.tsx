@@ -9,8 +9,9 @@ import { isPastor } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
-export default async function AttendancePage({ searchParams }: { searchParams: { sunday?: string } }) {
+export default async function AttendancePage({ searchParams }: { searchParams: Promise<{ sunday?: string }> }) {
   const user = await getServerUser();
+  const params = await searchParams;
   if (!user) redirect("/login");
   
   if (!isPastor(user.role)) {
@@ -34,7 +35,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
     } as any;
   });
 
-  const currentSunday = searchParams.sunday || getTargetSundayString();
+  const currentSunday = params.sunday || getTargetSundayString();
   const attendanceSnap = await db.collection("attendance").where("service_date", "==", currentSunday).get();
   const todayAttendance: AttendanceRecord[] = attendanceSnap.docs.map(doc => {
     const data = doc.data();
