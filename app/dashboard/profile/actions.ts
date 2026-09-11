@@ -42,7 +42,30 @@ export async function updateProfile(formData: FormData) {
   }
 
   try {
-    await getAdminDb().collection("users").doc(user.uid).update(updates);
+    const db = getAdminDb();
+    
+    // 1. Update users collection
+    await db.collection("users").doc(user.uid).update(updates);
+    
+    // 2. Update Firebase Auth displayName
+    if (updates.name) {
+      const { getAdminAuth } = await import("@/lib/firebase/admin");
+      await getAdminAuth().updateUser(user.uid, { displayName: updates.name });
+    }
+
+    // 3. Update congregation collection (so Attendance and Roster sync the new name)
+    if (updates.name) {
+      const congregationRef = db.collection("congregation");
+      const snap = await congregationRef.where("email", "==", user.email).get();
+      if (!snap.empty) {
+        const batch = db.batch();
+        snap.docs.forEach(doc => {
+          batch.update(doc.ref, { name: updates.name });
+        });
+        await batch.commit();
+      }
+    }
+
     revalidatePath("/dashboard");
     return { success: true };
   } catch (e) {

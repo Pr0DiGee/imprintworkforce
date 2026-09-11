@@ -23,6 +23,7 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
   const navigateWeek = (direction: -1 | 1) => {
     const newSunday = addWeeksToDate(currentSunday, direction);
     router.push(`/dashboard/attendance?sunday=${newSunday}`);
+    router.refresh();
   };
 
   const isCurrentWeek = currentSunday === getTargetSundayString();
