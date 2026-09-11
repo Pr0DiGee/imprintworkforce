@@ -6,7 +6,7 @@ import { updateProfile } from "./actions";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase/client";
-import { updatePassword, updateEmail, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { updatePassword, verifyBeforeUpdateEmail, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
 
 export function ProfileForm({ user }: { user: UserProfile }) {
@@ -91,9 +91,7 @@ export function ProfileForm({ user }: { user: UserProfile }) {
 
       // 2. Update Email if requested
       if (isEmailChange) {
-        await updateEmail(auth.currentUser, secNewEmail);
-        // Sync email to firestore users collection
-        await updateDoc(doc(db, "users", user.uid), { email: secNewEmail });
+        await verifyBeforeUpdateEmail(auth.currentUser, secNewEmail);
       }
 
       // 3. Update Password if requested
@@ -101,15 +99,14 @@ export function ProfileForm({ user }: { user: UserProfile }) {
         await updatePassword(auth.currentUser, secNewPassword);
       }
 
-      setSecSuccess(`Successfully updated ${isEmailChange ? "email" : "password"}.`);
+      setSecSuccess(isEmailChange 
+        ? "A verification link has been sent to your new email. Please click it to confirm the change." 
+        : "Password updated successfully.");
       setSecCurrentPassword("");
       setSecNewPassword("");
       setSecConfirmPassword("");
       setSecNewEmail("");
       setSecMode("none");
-      if (isEmailChange) {
-        await refreshProfile();
-      }
     } catch (err: any) {
       if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
         setSecError("Incorrect current password.");
