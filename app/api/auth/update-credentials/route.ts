@@ -60,6 +60,41 @@ export async function POST(req: NextRequest) {
     // Sync email change to Firestore
     if (newEmail) {
       await db.collection("users").doc(user.uid).update({ email: newEmail });
+
+      // Send confirmation email to the new address
+      try {
+        const { Resend } = await import("resend");
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: "Imprint Workforce <onboarding@resend.dev>",
+          to: newEmail,
+          subject: "Your Email Has Been Updated — Imprint Workforce",
+          html: `
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; color: #1a1a1a;">
+              <div style="text-align: center; margin-bottom: 28px;">
+                <h1 style="font-size: 22px; font-weight: 700; margin: 0; color: #111;">Imprint Workforce</h1>
+              </div>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">Hi <strong>${user.name}</strong>,</p>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
+                This is to confirm that your email address on the <strong>Imprint Workforce</strong> platform has been successfully updated to:
+              </p>
+              <div style="background: #f4f4f5; border-radius: 8px; padding: 14px 18px; text-align: center; margin: 0 0 20px;">
+                <span style="font-size: 16px; font-weight: 600; color: #111;">${newEmail}</span>
+              </div>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
+                Please use this email going forward to sign in. If you did not make this change, contact your administrator immediately.
+              </p>
+              <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 28px 0 16px;" />
+              <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
+                Imprint Global Church &bull; Imprint Workforce Platform
+              </p>
+            </div>
+          `,
+        });
+      } catch (emailErr) {
+        // Don't fail the request if the notification email fails
+        console.error("[update-credentials] Failed to send confirmation email:", emailErr);
+      }
     }
 
     return NextResponse.json({ 
