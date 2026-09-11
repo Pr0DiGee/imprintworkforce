@@ -17,7 +17,7 @@ const ROLE_LABELS: Record<AppRole, string> = {
   WORKER: "Worker",
   PASTOR: "Pastor",
   LEAD_PASTOR: "Lead Pastor",
-  DEVOTION_LEAD: "Devotion Lead",
+  DEVOTION_LEAD: "Devotion Team",
   ADMIN: "Admin",
 };
 
@@ -46,6 +46,21 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
   function cancelEdit() {
     setEditingUid(null);
   }
+
+  const handleDeleteUser = async (uid: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this user?")) return;
+    try {
+      const res = await fetch(`/api/admin/users?uid=${uid}`, { method: "DELETE" });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to delete user");
+      }
+      setUsers(users.filter(u => u.uid !== uid));
+      success("User deleted successfully");
+    } catch (err: any) {
+      error(err.message);
+    }
+  };
 
   async function handleSave(uid: string) {
     setSaving(true);
@@ -242,14 +257,24 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
                           </button>
                         </div>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => startEdit(user)}
-                          className="text-xs font-medium transition-opacity hover:opacity-80"
-                          style={{ color: "var(--accent-text)" }}
-                        >
-                          Edit
-                        </button>
+                        <div className="flex justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(user)}
+                            className="text-xs font-medium transition-opacity hover:opacity-80"
+                            style={{ color: "var(--accent-text)" }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(user.uid)}
+                            className="text-xs font-medium transition-opacity hover:opacity-80"
+                            style={{ color: "var(--danger)" }}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -277,8 +302,8 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
             <dd className="inline"> — All reports, all tasks, roster editing</dd>
           </div>
           <div>
-            <dt className="font-semibold inline" style={{ color: "var(--text-primary)" }}>Devotion Lead</dt>
-            <dd className="inline"> — Devotion schedule editing + standard access</dd>
+            <dt className="font-semibold inline" style={{ color: "var(--text-primary)" }}>Devotion Team</dt>
+            <dd className="inline ml-1" style={{ color: "var(--text-secondary)" }}>- Can view and manage the devotion schedule.</dd>
           </div>
           <div>
             <dt className="font-semibold inline" style={{ color: "var(--text-primary)" }}>Worker</dt>

@@ -78,3 +78,39 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
+
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const adminUser = await getServerUser();
+    if (!adminUser || adminUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const uid = searchParams.get('uid');
+
+    if (!uid) {
+      return NextResponse.json({ error: 'Missing user uid' }, { status: 400 });
+    }
+
+    // Don't allow admin to delete themselves
+    if (uid === adminUser.uid) {
+      return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
+    }
+
+    const auth = getAdminAuth();
+    const db = getAdminDb();
+
+    // Delete from Auth
+    await auth.deleteUser(uid);
+    // Delete from Firestore
+    await db.collection('users').doc(uid).delete();
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('[DELETE /api/admin/users]', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  }
+}
+

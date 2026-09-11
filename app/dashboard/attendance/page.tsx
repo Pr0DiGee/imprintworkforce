@@ -7,7 +7,7 @@ import { AttendanceClient } from "./AttendanceClient";
 
 import { isPastor } from "@/lib/roles";
 
-export default async function AttendancePage() {
+export default async function AttendancePage({ searchParams }: { searchParams: { sunday?: string } }) {
   const user = await getServerUser();
   if (!user) redirect("/login");
   
@@ -32,7 +32,7 @@ export default async function AttendancePage() {
     } as any;
   });
 
-  const currentSunday = getTargetSundayString();
+  const currentSunday = searchParams.sunday || getTargetSundayString();
   const attendanceSnap = await db.collection("attendance").where("service_date", "==", currentSunday).get();
   const todayAttendance: AttendanceRecord[] = attendanceSnap.docs.map(doc => {
     const data = doc.data();

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { CongregationMember, AttendanceRecord } from "@/types";
-import { formatTargetSunday } from "@/lib/sunday";
+import { formatTargetSunday, addWeeksToDate, getTargetSundayString } from "@/lib/sunday";
 import Link from "next/link";
-import { Users, Search, QrCode, Filter } from "lucide-react";
+import { Users, Search, QrCode, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface AttendanceClientProps {
   members: CongregationMember[];
@@ -13,10 +14,18 @@ interface AttendanceClientProps {
 }
 
 export function AttendanceClient({ members, todayAttendance, currentSunday }: AttendanceClientProps) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"ALL" | "FIRST_TIMER" | "SECOND_TIMER" | "REGULAR">("ALL");
 
   const checkedInIds = new Set(todayAttendance.map(a => a.member_id));
+
+  const navigateWeek = (direction: -1 | 1) => {
+    const newSunday = addWeeksToDate(currentSunday, direction);
+    router.push(`/dashboard/attendance?sunday=${newSunday}`);
+  };
+
+  const isCurrentWeek = currentSunday === getTargetSundayString();
 
   const getVisitorStatus = (member: CongregationMember): "FIRST_TIMER" | "SECOND_TIMER" | "REGULAR" => {
     if (member.attendance_count !== undefined) {
@@ -63,9 +72,26 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
           <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
             Attendance & Connect
           </h2>
-          <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>
-            Overview for {formatTargetSunday(currentSunday)}
-          </p>
+          <div className="flex items-center gap-3 mt-1.5">
+            <button
+              onClick={() => navigateWeek(-1)}
+              className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors border"
+              style={{ borderColor: "var(--border-primary)", color: "var(--text-secondary)" }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              {formatTargetSunday(currentSunday)}
+            </span>
+            <button
+              onClick={() => navigateWeek(1)}
+              disabled={isCurrentWeek}
+              className={`p-1 rounded-md transition-colors border ${isCurrentWeek ? "opacity-30 cursor-not-allowed" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
+              style={{ borderColor: "var(--border-primary)", color: "var(--text-secondary)" }}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

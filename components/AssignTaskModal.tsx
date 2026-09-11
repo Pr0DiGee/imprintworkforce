@@ -141,7 +141,7 @@ export function AssignTaskModal({
                 {users.map((u) => (
                   <option key={u.uid} value={u.uid}>
                     {u.name} ({u.role.replace(/_/g, " ")})
-                    {u.department ? ` — ${u.department.replace(/_/g, " ")}` : ""}
+                    {u.departments?.length > 0 ? ` — ${u.departments.join(", ").replace(/_/g, " ")}` : ""}
                   </option>
                 ))}
               </select>
