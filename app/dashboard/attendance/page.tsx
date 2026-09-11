@@ -7,6 +7,8 @@ import { AttendanceClient } from "./AttendanceClient";
 
 import { isPastor } from "@/lib/roles";
 
+export const dynamic = "force-dynamic";
+
 export default async function AttendancePage({ searchParams }: { searchParams: { sunday?: string } }) {
   const user = await getServerUser();
   if (!user) redirect("/login");
