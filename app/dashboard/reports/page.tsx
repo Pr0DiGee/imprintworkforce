@@ -9,7 +9,10 @@ export default async function ReportsPage() {
   if (!user) redirect("/login");
 
   const currentSunday = getTargetSundayString();
-  const departments = user.departments ?? [];
+  const isLeadPastorPlus = ["LEAD_PASTOR", "ADMIN", "SYSTEM_ADMIN"].includes(user.role.toUpperCase());
+  const departments = isLeadPastorPlus 
+    ? ["CHOIR", "MEDIA", "USHERING", "DEVOTION", "BABCOCK_CAMPUS"] 
+    : (user.departments ?? []);
 
   // Fetch the current sunday's reports for the user's departments
   const reports = await fetchReportsForSunday(currentSunday);

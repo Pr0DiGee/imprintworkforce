@@ -20,8 +20,8 @@ export function ReportsClient({
   currentSunday,
   initialReport,
 }: ReportsClientProps) {
-  const isPastorPlus = ["PASTOR", "LEAD_PASTOR", "ADMIN", "SYSTEM_ADMIN"].includes(user.role.toUpperCase());
-  const departments = (isPastorPlus ? ["CHOIR", "MEDIA", "USHERING", "DEVOTION", "BABCOCK_CAMPUS"] : (user.departments || [])) as Department[];
+  const isLeadPastorPlus = ["LEAD_PASTOR", "ADMIN", "SYSTEM_ADMIN"].includes(user.role.toUpperCase());
+  const departments = (isLeadPastorPlus ? ["CHOIR", "MEDIA", "USHERING", "DEVOTION", "BABCOCK_CAMPUS"] : (user.departments || [])) as Department[];
   
   // Default to first department if user has multiple, otherwise empty
   const [activeDept, setActiveDept] = useState<Department | "">(

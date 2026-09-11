@@ -249,7 +249,7 @@ export function DevotionClient({
                       style={{ background: "var(--bg-input)", color: "var(--text-primary)", borderColor: "var(--border-primary)" }}
                     >
                       <option value="">— assign teacher —</option>
-                      {users.map(u => (
+                      {users.filter(u => u.role !== "ADMIN" && u.role !== "SYSTEM_ADMIN").map(u => (
                         <option key={u.uid} value={u.uid}>{u.name}</option>
                       ))}
                     </select>
@@ -264,7 +264,7 @@ export function DevotionClient({
                       style={{ background: "var(--bg-input)", color: "var(--text-primary)", borderColor: "var(--border-primary)" }}
                     >
                       <option value="">— assign backup —</option>
-                      {users.map(u => (
+                      {users.filter(u => u.role !== "ADMIN" && u.role !== "SYSTEM_ADMIN").map(u => (
                         <option key={u.uid} value={u.uid}>{u.name}</option>
                       ))}
                     </select>

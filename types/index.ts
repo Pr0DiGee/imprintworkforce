@@ -1,7 +1,7 @@
 import { Timestamp } from "firebase/firestore";
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
-export type AppRole = "WORKER" | "PASTOR" | "LEAD_PASTOR" | "DEVOTION_LEAD" | "ADMIN";
+export type AppRole = "WORKER" | "PASTOR" | "LEAD_PASTOR" | "DEVOTION_LEAD" | "ADMIN" | "SYSTEM_ADMIN";
 
 // ─── Departments ──────────────────────────────────────────────────────────────
 export type Department =

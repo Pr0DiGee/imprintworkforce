@@ -19,6 +19,7 @@ const ROLE_LABELS: Record<AppRole, string> = {
   LEAD_PASTOR: "Lead Pastor",
   DEVOTION_LEAD: "Devotion Team",
   ADMIN: "Admin",
+  SYSTEM_ADMIN: "System Admin",
 };
 
 interface AdminClientProps {
