@@ -69,7 +69,7 @@ export async function GET(request: Request) {
 
       try {
         await resend.emails.send({
-          from: "Imprint Workforce <onboarding@resend.dev>", 
+          from: "Imprint Workforce <no-reply@zubby.me>", 
           to: user.email,
           subject: `Reminder: You are leading devotion ${dayLabel}`,
           html,

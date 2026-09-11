@@ -65,8 +65,8 @@ export async function POST(req: NextRequest) {
       try {
         const { Resend } = await import("resend");
         const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
-          from: "Imprint Workforce <onboarding@resend.dev>",
+        const emailResult = await resend.emails.send({
+          from: "Imprint Workforce <no-reply@zubby.me>",
           to: newEmail,
           subject: "Your Email Has Been Updated — Imprint Workforce",
           html: `
@@ -91,6 +91,12 @@ export async function POST(req: NextRequest) {
             </div>
           `,
         });
+
+        if (emailResult.error) {
+          console.error("[update-credentials] Resend API error:", JSON.stringify(emailResult.error));
+        } else {
+          console.log("[update-credentials] Confirmation email sent:", emailResult.data?.id);
+        }
       } catch (emailErr) {
         // Don't fail the request if the notification email fails
         console.error("[update-credentials] Failed to send confirmation email:", emailErr);
