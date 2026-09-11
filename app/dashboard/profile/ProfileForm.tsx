@@ -5,9 +5,6 @@ import { UserProfile, DEPARTMENT_LABELS } from "@/types";
 import { updateProfile } from "./actions";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/context/AuthContext";
-import { auth, db } from "@/lib/firebase/client";
-import { updatePassword, verifyBeforeUpdateEmail, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
 
 export function ProfileForm({ user }: { user: UserProfile }) {
   const { refreshProfile } = useAuth();
@@ -69,52 +66,46 @@ export function ProfileForm({ user }: { user: UserProfile }) {
 
   async function handleSecuritySubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!auth.currentUser) return;
     
     setSecLoading(true);
     setSecError(null);
     setSecSuccess(null);
 
-    const isEmailChange = secMode === "email";
-    const isPasswordChange = secMode === "password";
-
-    if (isPasswordChange && secNewPassword !== secConfirmPassword) {
+    if (secMode === "password" && secNewPassword !== secConfirmPassword) {
       setSecError("New passwords do not match.");
       setSecLoading(false);
       return;
     }
 
     try {
-      // 1. Re-authenticate
-      const credential = EmailAuthProvider.credential(user.email, secCurrentPassword);
-      await reauthenticateWithCredential(auth.currentUser, credential);
+      const res = await fetch("/api/auth/update-credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: secCurrentPassword,
+          ...(secMode === "email" ? { newEmail: secNewEmail } : { newPassword: secNewPassword }),
+        }),
+      });
 
-      // 2. Update Email if requested
-      if (isEmailChange) {
-        await verifyBeforeUpdateEmail(auth.currentUser, secNewEmail);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setSecError(data.error || "Failed to update.");
+        return;
       }
 
-      // 3. Update Password if requested
-      if (isPasswordChange) {
-        await updatePassword(auth.currentUser, secNewPassword);
-      }
-
-      setSecSuccess(isEmailChange 
-        ? "A verification link has been sent to your new email. Please click it to confirm the change." 
-        : "Password updated successfully.");
+      setSecSuccess(data.message);
       setSecCurrentPassword("");
       setSecNewPassword("");
       setSecConfirmPassword("");
       setSecNewEmail("");
       setSecMode("none");
-    } catch (err: any) {
-      if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-        setSecError("Incorrect current password.");
-      } else if (err.code === "auth/email-already-in-use") {
-        setSecError("That email is already in use by another account.");
-      } else {
-        setSecError(err.message || "Failed to update security settings.");
+
+      if (secMode === "email") {
+        await refreshProfile();
       }
+    } catch (err: any) {
+      setSecError(err.message || "An unexpected error occurred.");
     } finally {
       setSecLoading(false);
     }
@@ -248,15 +239,15 @@ export function ProfileForm({ user }: { user: UserProfile }) {
           <div className="flex gap-4">
             <button
               onClick={() => { setSecMode("email"); setSecSuccess(null); setSecError(null); }}
-              className="px-4 py-2 rounded-lg text-sm font-medium border"
-              style={{ background: "var(--bg-page)", borderColor: "var(--border-primary)", color: "var(--text-primary)" }}
+              className="px-5 py-2.5 rounded-lg text-sm font-medium border transition-all duration-150 hover:scale-105 hover:shadow-md active:scale-95"
+              style={{ background: "var(--bg-card)", borderColor: "var(--border-primary)", color: "var(--text-primary)" }}
             >
               Update Email
             </button>
             <button
               onClick={() => { setSecMode("password"); setSecSuccess(null); setSecError(null); }}
-              className="px-4 py-2 rounded-lg text-sm font-medium border"
-              style={{ background: "var(--bg-page)", borderColor: "var(--border-primary)", color: "var(--text-primary)" }}
+              className="px-5 py-2.5 rounded-lg text-sm font-medium border transition-all duration-150 hover:scale-105 hover:shadow-md active:scale-95"
+              style={{ background: "var(--bg-card)", borderColor: "var(--border-primary)", color: "var(--text-primary)" }}
             >
               Update Password
             </button>
