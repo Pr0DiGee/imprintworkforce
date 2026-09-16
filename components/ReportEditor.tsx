@@ -137,24 +137,10 @@ export function ReportEditor({
   }
 
   async function handleDownloadPDF() {
-    if (!pageRef.current) return;
-    try {
-      const html2pdf = (await import("html2pdf.js")).default;
-      const opt = {
-        margin: 0,
-        filename: `${defaultDepartmentName}_Report_${targetSunday}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' as const }
-      };
-      html2pdf().set(opt).from(pageRef.current).save();
-    } catch (err) {
-      error("Failed to generate PDF.");
-      console.error(err);
-    }
+    window.print();
   }
 
-  async function handleForwardEmail() {
+  async function handleForwardEmail(toEmail: string, label: string) {
     if (!pageRef.current) return;
     setSendingEmail(true);
     try {
@@ -176,7 +162,7 @@ export function ReportEditor({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: "imprintglobalministry@gmail.com",
+          to: toEmail,
           subject,
           html: `<p>Please find attached the weekly report for ${defaultDepartmentName} for ${targetSunday}.</p>`,
           attachment: {
@@ -191,7 +177,7 @@ export function ReportEditor({
         throw new Error(errorData?.error?.message || "Failed to send email");
       }
       
-      success("Report forwarded to church email!");
+      success(`Report forwarded to ${label}!`);
     } catch (err) {
       error(err instanceof Error ? err.message : "An error occurred while emailing.");
     } finally {
@@ -325,19 +311,30 @@ export function ReportEditor({
             className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors hover:bg-gray-100 border border-gray-200"
           >
             <Download size={16} />
-            Save as PDF
+            Print / Save as PDF
           </button>
           
           {!hideForwardButton && (
-            <button
-              onClick={handleForwardEmail}
-              disabled={sendingEmail}
-              className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
-              style={{ background: "var(--accent)" }}
-            >
-              <Mail size={16} />
-              {sendingEmail ? "Sending..." : "Forward to Church Email"}
-            </button>
+            <>
+              <button
+                onClick={() => handleForwardEmail("imprintglobalministry@gmail.com", "Church Email")}
+                disabled={sendingEmail}
+                className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
+                style={{ background: "var(--accent)" }}
+              >
+                <Mail size={16} />
+                {sendingEmail ? "Sending..." : "Forward to Church"}
+              </button>
+              <button
+                onClick={() => handleForwardEmail("adebayoadeboye.o@gmail.com", "Lead Pastor")}
+                disabled={sendingEmail}
+                className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
+                style={{ background: "var(--accent)" }}
+              >
+                <Mail size={16} />
+                {sendingEmail ? "Sending..." : "Forward to Lead Pastor"}
+              </button>
+            </>
           )}
         </div>
 

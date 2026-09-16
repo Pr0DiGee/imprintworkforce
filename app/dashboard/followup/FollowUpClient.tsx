@@ -26,12 +26,20 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
   const [showAddModal, setShowAddModal] = useState(false);
   const toast = useToast();
 
+  const isPastor = user.role === "PASTOR" || user.role === "LEAD_PASTOR";
+  const defaultCampus = user.departments?.includes("BABCOCK_CAMPUS") ? "BABCOCK" : "GLOBAL";
+  const [campusView, setCampusView] = useState<"GLOBAL" | "BABCOCK">(defaultCampus);
+
+  const campusContacts = useMemo(() => {
+    return contacts.filter(c => (c.campus || "GLOBAL") === campusView);
+  }, [contacts, campusView]);
+
   const myContacts = useMemo(() => {
-    return contacts.filter(c => c.assigned_to === user.uid);
-  }, [contacts, user.uid]);
+    return campusContacts.filter(c => c.assigned_to === user.uid);
+  }, [campusContacts, user.uid]);
 
   const filteredContacts = useMemo(() => {
-    const list = activeTab === "MY_FOLLOW_UPS" ? myContacts : contacts;
+    const list = activeTab === "MY_FOLLOW_UPS" ? myContacts : campusContacts;
     
     // First, filter by search query
     let filtered = list;
@@ -57,7 +65,7 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
       const timeB = new Date(logB.logged_at as any).getTime();
       return timeB - timeA;
     });
-  }, [activeTab, myContacts, contacts, searchQuery, logs]);
+  }, [activeTab, myContacts, campusContacts, searchQuery, logs]);
 
   // Helper to check if a contact was followed up this week
   const hasLoggedThisWeek = (contactId: string) => {
@@ -72,7 +80,20 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
     <div className="max-w-5xl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>Follow-Up</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-3" style={{ color: "var(--text-primary)" }}>
+            Follow-Up
+            {isPastor && (
+              <select
+                value={campusView}
+                onChange={(e) => setCampusView(e.target.value as "GLOBAL" | "BABCOCK")}
+                className="text-sm font-medium px-2 py-1 rounded-md"
+                style={{ background: "var(--bg-input)", border: "1px solid var(--border-primary)", color: "var(--text-primary)" }}
+              >
+                <option value="GLOBAL">Global</option>
+                <option value="BABCOCK">Babcock Cell</option>
+              </select>
+            )}
+          </h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
             Track and log your weekly follow-up assignments. Target Sunday: <span className="font-medium">{targetSunday}</span>
           </p>
@@ -112,7 +133,7 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
 
       {activeTab === "GLOBAL_LIST" ? (
         <GlobalFollowUpTable 
-          contacts={contacts}
+          contacts={campusContacts}
           logs={logs}
           userMap={userMap}
           targetSunday={targetSunday}
@@ -163,6 +184,7 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
 
       {showAddModal && (
         <AddContactModal
+          campusView={campusView}
           onClose={() => setShowAddModal(false)}
           user={user}
           onSuccess={() => {
@@ -394,7 +416,7 @@ function ContactCard({
 
 // ─── Add Contact Modal ────────────────────────────────────────────────────────
 
-function AddContactModal({ onClose, user, onSuccess }: { onClose: () => void, user: UserProfile, onSuccess: () => void }) {
+function AddContactModal({ onClose, user, campusView, onSuccess }: { onClose: () => void, user: UserProfile, campusView: "GLOBAL" | "BABCOCK", onSuccess: () => void }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -411,6 +433,7 @@ function AddContactModal({ onClose, user, onSuccess }: { onClose: () => void, us
         phone: phone.trim(),
         address: address.trim(),
         assigned_to: user.uid,
+        campus: campusView,
         created_at: serverTimestamp()
       });
       onSuccess();

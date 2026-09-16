@@ -13,10 +13,13 @@ export async function GET(req: Request) {
     // 1. Task Reminders run EVERY DAY
     await sendTaskReminders();
 
-    // Get current day (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-    const today = new Date().getDay();
+    // Vercel crons run in UTC. We need to evaluate the day in Nigerian time (UTC+1).
+    // An easy way is to use toLocaleString with the timeZone option.
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", { timeZone: "Africa/Lagos", weekday: "short" });
+    const weekday = formatter.format(now); // e.g. "Sat"
 
-    if (today === 6) {
+    if (weekday === "Sat") {
       // 2. Roster Reminders run ONLY ON SATURDAY (day 6)
       await sendRosterReminders();
     } else {

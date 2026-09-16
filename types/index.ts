@@ -200,6 +200,7 @@ export interface FollowUpContact {
   phone: string;
   address?: string;
   assigned_to: string; // uid of the worker
+  campus?: "GLOBAL" | "BABCOCK";
   created_at?: Timestamp;
 }
 
