@@ -232,7 +232,7 @@ export function ReportEditor({
     <div className="flex flex-col gap-4">
       {/* Toolbar */}
       {!disabled && (
-        <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 rounded-lg sticky top-4 z-10 shadow-sm" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-primary)" }}>
+        <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 rounded-lg sticky top-4 z-10 shadow-sm no-print" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-primary)" }}>
           <ToolbarBtn title="Bold" onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive("bold")}><strong>B</strong></ToolbarBtn>
           <ToolbarBtn title="Italic" onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive("italic")}><em>I</em></ToolbarBtn>
           <span className="w-px h-5 mx-1" style={{ background: "var(--border-primary)" }} />

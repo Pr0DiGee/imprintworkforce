@@ -93,7 +93,7 @@ export function ReportsClient({
 
   return (
     <div className="max-w-3xl space-y-4 print-full-width">
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 no-print">
         <div>
           <h2
             className="text-lg font-semibold"
