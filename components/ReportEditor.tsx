@@ -14,7 +14,7 @@ import { getTargetSundayString } from "@/lib/date";
 import { useToast } from "@/context/ToastContext";
 import { ToolbarBtn } from "@/components/ToolbarBtn";
 import Image from "next/image";
-import { Mail, Download } from "lucide-react";
+import { Bold, Italic, Type, FileText, Download, Mail, Copy, Send } from "lucide-react";
 
 interface ReportEditorProps {
   existingReport: Report | null;
@@ -307,28 +307,28 @@ export function ReportEditor({
             className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors hover:bg-gray-100 border border-gray-200"
           >
             <Download size={16} />
-            Print / Save as PDF
+            PDF
           </button>
           
           {!hideForwardButton && (
             <>
               <button
                 onClick={() => handleForwardEmail("imprintglobalministry@gmail.com", "Church Email")}
-                disabled={sendingEmailTo !== null}
+                disabled={sendingEmailTo === "imprintglobalministry@gmail.com"}
                 className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
                 style={{ background: "var(--accent)" }}
               >
-                <Mail size={16} />
-                {sendingEmailTo === "imprintglobalministry@gmail.com" ? "Sending..." : "Forward to Church"}
+                <Send size={16} />
+                {sendingEmailTo === "imprintglobalministry@gmail.com" ? "Sending..." : "Church Email"}
               </button>
               <button
                 onClick={() => handleForwardEmail("adebayoadeboye.o@gmail.com", "Lead Pastor")}
-                disabled={sendingEmailTo !== null}
+                disabled={sendingEmailTo === "adebayoadeboye.o@gmail.com"}
                 className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
                 style={{ background: "var(--accent)" }}
               >
-                <Mail size={16} />
-                {sendingEmailTo === "adebayoadeboye.o@gmail.com" ? "Sending..." : "Forward to Lead Pastor"}
+                <Send size={16} />
+                {sendingEmailTo === "adebayoadeboye.o@gmail.com" ? "Sending..." : "Lead Pastor"}
               </button>
             </>
           )}
@@ -343,7 +343,7 @@ export function ReportEditor({
                 className="flex justify-center items-center px-4 py-1.5 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-70"
                 style={{ background: "var(--accent)" }}
               >
-                {saving ? "Updating…" : "Update Report"}
+                {saving ? "Updating…" : "Update"}
               </button>
             ) : (
               <>
@@ -353,7 +353,7 @@ export function ReportEditor({
                   className="flex justify-center items-center px-4 py-1.5 text-sm font-medium rounded-md transition-colors disabled:opacity-70"
                   style={{ color: "var(--accent)", border: "1px solid var(--accent)" }}
                 >
-                  {saving ? "Saving…" : "Save Draft"}
+                  {saving ? "Saving…" : "Save"}
                 </button>
                 <button
                   onClick={() => setConfirmSubmit(true)}
@@ -361,7 +361,7 @@ export function ReportEditor({
                   className="flex justify-center items-center px-4 py-1.5 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-70"
                   style={{ background: "var(--accent)" }}
                 >
-                  Submit Report
+                  Submit
                 </button>
 
                 {confirmSubmit && (

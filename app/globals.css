@@ -290,6 +290,15 @@ input::placeholder, textarea::placeholder {
   vertical-align: top;
   box-sizing: border-box;
   position: relative;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .tiptap-content table td,
+  .tiptap-content table th {
+    min-width: 1em !important;
+    width: auto !important;
+  }
 }
 
 .tiptap-content table th {
