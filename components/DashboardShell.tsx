@@ -37,7 +37,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Mobile header ───────────────────────────────────────────────── */}
       <div
-        className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3"
+        className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 no-print"
         style={{
           background: "var(--bg-sidebar)",
           borderBottom: "1px solid var(--border-primary)",

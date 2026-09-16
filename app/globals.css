@@ -267,9 +267,9 @@ input::placeholder, textarea::placeholder {
 .toast-exit { animation: toast-out 0.3s ease-in forwards; }
 
 /* ─── Tiptap Table Styles ────────────────────────────────────────────────── */
-.tiptap-content table {
+.tiptap-content .tableWrapper { overflow-x: auto; margin: 0; }\n.tiptap-content table {
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto; min-width: 500px;
   width: 100%;
   margin: 1.5rem 0;
   overflow: hidden;

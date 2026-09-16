@@ -38,7 +38,7 @@ export function ReportEditor({
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
-  const [sendingEmail, setSendingEmail] = useState(false);
+  const [sendingEmailTo, setSendingEmailTo] = useState<string | null>(null);
   const { success, error } = useToast();
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -142,21 +142,23 @@ export function ReportEditor({
 
   async function handleForwardEmail(toEmail: string, label: string) {
     if (!pageRef.current) return;
-    setSendingEmail(true);
+    setSendingEmailTo(toEmail);
     try {
-      // Generate PDF as base64
-      const html2pdf = (await import("html2pdf.js")).default;
-      const opt = {
-        margin: 0,
-        filename: `${defaultDepartmentName}_Report_${targetSunday}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' as const }
-      };
-      
-      const pdfBase64 = await html2pdf().set(opt).from(pageRef.current).outputPdf('datauristring');
-      
       const subject = `Weekly Report - ${defaultDepartmentName} - ${targetSunday}`;
+      const reportHtml = editor?.getHTML() || "";
+      const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+
+      const emailHtml = `
+        <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto; color: #333;">
+          <h1 style="text-align: center; color: #111827;">${headerPrefix} Report</h1>
+          <h2 style="text-align: center; color: #374151; margin-top: 4px;">${reportTitle}</h2>
+          <p style="text-align: center; color: #6b7280; font-style: italic;">Date: ${dateStr}</p>
+          <hr style="border: none; height: 2px; background-color: #b91c1c; margin: 2rem 0;" />
+          <div style="margin-top: 20px;">
+            ${reportHtml}
+          </div>
+        </div>
+      `;
       
       const res = await fetch("/api/send", {
         method: "POST",
@@ -164,11 +166,7 @@ export function ReportEditor({
         body: JSON.stringify({
           to: toEmail,
           subject,
-          html: `<p>Please find attached the weekly report for ${defaultDepartmentName} for ${targetSunday}.</p>`,
-          attachment: {
-            filename: `${defaultDepartmentName}_Report_${targetSunday}.pdf`,
-            content: pdfBase64,
-          }
+          html: emailHtml
         }),
       });
 
@@ -181,27 +179,29 @@ export function ReportEditor({
     } catch (err) {
       error(err instanceof Error ? err.message : "An error occurred while emailing.");
     } finally {
-      setSendingEmail(false);
+      setSendingEmailTo(null);
     }
   }
 
   async function handleTestEmail() {
     if (!pageRef.current) return;
-    setSendingEmail(true);
+    setSendingEmailTo("test");
     try {
-      // Generate PDF as base64
-      const html2pdf = (await import("html2pdf.js")).default;
-      const opt = {
-        margin: 0,
-        filename: `${defaultDepartmentName}_Report_${targetSunday}_TEST.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' as const }
-      };
-      
-      const pdfBase64 = await html2pdf().set(opt).from(pageRef.current).outputPdf('datauristring');
-      
       const subject = `[TEST] Weekly Report - ${defaultDepartmentName} - ${targetSunday}`;
+      const reportHtml = editor?.getHTML() || "";
+      const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+
+      const emailHtml = `
+        <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto; color: #333;">
+          <h1 style="text-align: center; color: #111827;">${headerPrefix} Report [TEST]</h1>
+          <h2 style="text-align: center; color: #374151; margin-top: 4px;">${reportTitle}</h2>
+          <p style="text-align: center; color: #6b7280; font-style: italic;">Date: ${dateStr}</p>
+          <hr style="border: none; height: 2px; background-color: #b91c1c; margin: 2rem 0;" />
+          <div style="margin-top: 20px;">
+            ${reportHtml}
+          </div>
+        </div>
+      `;
       
       const res = await fetch("/api/send", {
         method: "POST",
@@ -209,11 +209,7 @@ export function ReportEditor({
         body: JSON.stringify({
           to: "zubbyobunadike@gmail.com",
           subject,
-          html: `<p>This is a TEST. Please find attached the weekly report for ${defaultDepartmentName} for ${targetSunday}.</p>`,
-          attachment: {
-            filename: `${defaultDepartmentName}_Report_${targetSunday}_TEST.pdf`,
-            content: pdfBase64,
-          }
+          html: emailHtml
         }),
       });
 
@@ -226,7 +222,7 @@ export function ReportEditor({
     } catch (err) {
       error(err instanceof Error ? err.message : "An error occurred while emailing.");
     } finally {
-      setSendingEmail(false);
+      setSendingEmailTo(null);
     }
   }
 
@@ -318,21 +314,21 @@ export function ReportEditor({
             <>
               <button
                 onClick={() => handleForwardEmail("imprintglobalministry@gmail.com", "Church Email")}
-                disabled={sendingEmail}
+                disabled={sendingEmailTo !== null}
                 className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
                 style={{ background: "var(--accent)" }}
               >
                 <Mail size={16} />
-                {sendingEmail ? "Sending..." : "Forward to Church"}
+                {sendingEmailTo === "imprintglobalministry@gmail.com" ? "Sending..." : "Forward to Church"}
               </button>
               <button
                 onClick={() => handleForwardEmail("adebayoadeboye.o@gmail.com", "Lead Pastor")}
-                disabled={sendingEmail}
+                disabled={sendingEmailTo !== null}
                 className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
                 style={{ background: "var(--accent)" }}
               >
                 <Mail size={16} />
-                {sendingEmail ? "Sending..." : "Forward to Lead Pastor"}
+                {sendingEmailTo === "adebayoadeboye.o@gmail.com" ? "Sending..." : "Forward to Lead Pastor"}
               </button>
             </>
           )}
