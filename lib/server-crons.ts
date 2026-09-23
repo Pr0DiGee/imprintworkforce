@@ -1,6 +1,6 @@
 import { getAdminDb } from "@/lib/firebase/admin";
 import { Resend } from "resend";
-import { getTargetSundayString, formatTargetSunday } from "@/lib/date";
+import { formatTargetSunday } from "@/lib/date";
 import { DevotionDaily, Task, ROSTER_DUTY_LABELS, Roster } from "@/types";
 import { Timestamp } from "firebase-admin/firestore";
 
@@ -185,7 +185,12 @@ export async function sendRosterReminders() {
   console.log("[CRON] Running Roster Reminders");
   try {
     const db = getAdminDb();
-    const targetSunday = getTargetSundayString();
+    // This function only runs on Saturday (guarded in route.ts),
+    // so tomorrow (+1 day) is always the upcoming Sunday.
+    // We must NOT use getTargetSundayString() here because that returns
+    // the *previous* Sunday (start of the current week), which is wrong.
+    const targetSunday = getISODateOffset(1);
+    console.log(`[CRON] Roster target Sunday: ${targetSunday}`);
     
     const rosterSnap = await db
       .collection("roster")
