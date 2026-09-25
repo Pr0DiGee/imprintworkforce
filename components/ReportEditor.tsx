@@ -39,6 +39,7 @@ export function ReportEditor({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [sendingEmailTo, setSendingEmailTo] = useState<string | null>(null);
+  const [editorUpdate, setEditorUpdate] = useState(0);
   const { success, error } = useToast();
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +62,14 @@ export function ReportEditor({
     ],
     content: initialContent(),
     editable: !disabled,
+    onSelectionUpdate() {
+      // Force toolbar re-render so table commands re-evaluate can()
+      setEditorUpdate(c => c + 1);
+    },
+    onTransaction() {
+      // Also re-render on any transaction (content changes, etc.)
+      setEditorUpdate(c => c + 1);
+    },
     editorProps: {
       attributes: {
         class: "tiptap-content min-h-[280px] px-0 py-4 focus:outline-none text-sm",

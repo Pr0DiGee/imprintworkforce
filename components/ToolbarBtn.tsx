@@ -20,7 +20,6 @@ export function ToolbarBtn({
       type="button"
       title={title}
       onClick={onClick}
-      onMouseDown={(e) => e.preventDefault()}
       disabled={disabled}
       className={`px-2 py-1 rounded text-sm font-medium transition-colors focus:outline-none focus:ring-2 disabled:opacity-40 disabled:cursor-not-allowed ${
         isActive ? "bg-opacity-20" : "hover:bg-opacity-10"

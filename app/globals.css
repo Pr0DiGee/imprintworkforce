@@ -418,7 +418,7 @@ input::placeholder, textarea::placeholder {
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   min-height: 1131px; /* approximate A4 height at 96dpi */
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
 }
