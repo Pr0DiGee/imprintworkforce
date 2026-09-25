@@ -54,7 +54,7 @@ export function ReportEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Table.configure({ resizable: true }),
+      Table.configure({ resizable: false }),
       TableRow,
       TableHeader,
       TableCell,

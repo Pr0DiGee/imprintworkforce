@@ -122,6 +122,85 @@ input::placeholder, textarea::placeholder {
 .badge.warn { background: var(--warning-subtle); color: var(--warning); }
 .badge.off { background: var(--bg-muted); color: var(--text-muted); }
 
+/* ─── Shared Button Utilities ──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+}
+.btn:hover:not(:disabled) {
+  background-color: var(--bg-card-hover);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn.primary {
+  background-color: var(--accent);
+  color: white !important;
+  border-color: var(--accent);
+}
+.btn.primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+}
+.btn.icon {
+  padding: 0.25rem;
+}
+
+/* ─── Shared Card & List Utilities ─────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card-top {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-elevated);
+}
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.dim {
+  opacity: 0.6;
+}
+.role-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-primary);
+}
+.role-row:last-child {
+  border-bottom: none;
+}
+.role-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 1rem;
+}
+
 .date-strip {
   display: flex;
   gap: 8px;
@@ -280,6 +359,10 @@ input::placeholder, textarea::placeholder {
   overflow: hidden;
   box-shadow: 0 0 0 1px #e3e1da;
   border-radius: 4px;
+}
+
+.tiptap-content table p {
+  margin: 0;
 }
 
 .tiptap-content table td,

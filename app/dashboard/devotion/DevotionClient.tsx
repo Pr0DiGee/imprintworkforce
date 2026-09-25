@@ -83,6 +83,32 @@ function InlineTiptapEditor({
   );
 }
 
+function ReadOnlyTiptapEditor({ content }: { content: string }) {
+  const getInitial = () => {
+    if (!content) return "";
+    try {
+      return JSON.parse(content);
+    } catch {
+      return content;
+    }
+  };
+
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: getInitial(),
+    editable: false,
+    editorProps: {
+      attributes: {
+        class: "tiptap-content text-sm mt-3 p-4 rounded-md bg-white border",
+        style: "border-color: var(--border-primary);",
+      },
+    },
+  });
+
+  if (!editor) return null;
+  return <EditorContent editor={editor} />;
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 interface DevotionClientProps {
@@ -319,7 +345,7 @@ export function DevotionClient({
                       saving={savingState[date] || false}
                     />
                   ) : (
-                    <div className="tiptap-content text-sm mt-3 p-4 rounded-md bg-white border" style={{ borderColor: "var(--border-primary)" }} dangerouslySetInnerHTML={{ __html: dev?.teaching_notes || "<p>No notes written yet.</p>" }} />
+                    <ReadOnlyTiptapEditor content={dev?.teaching_notes || "<p>No notes written yet.</p>"} />
                   )}
                 </div>
               )}
