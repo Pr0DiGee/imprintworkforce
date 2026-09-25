@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { UserProfile, FollowUpContact, FollowUpLog, FollowUpMethod } from "@/types";
 import { format } from "date-fns";
 import { addDoc, collection, serverTimestamp, deleteDoc, doc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase/client";
 import { Phone, MessageSquare, MapPin, User, CheckCircle2, UserCheck, Search, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
@@ -25,6 +26,7 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const toast = useToast();
+  const router = useRouter();
 
   const isPastor = user.role === "PASTOR" || user.role === "LEAD_PASTOR";
   const defaultCampus = user.departments?.includes("BABCOCK_CAMPUS") ? "BABCOCK" : "GLOBAL";
@@ -190,9 +192,7 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
           onSuccess={() => {
             setShowAddModal(false);
             toast.success("Contact added successfully");
-            // The router will refresh automatically due to standard practices, 
-            // but we rely on a client-side reload or just wait for the next refetch.
-            window.location.reload();
+            router.refresh();
           }}
         />
       )}
@@ -226,6 +226,7 @@ function ContactCard({
   const [logNotes, setLogNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
+  const router = useRouter();
 
   const handleLog = async () => {
     if (!contact.id) return;
@@ -240,7 +241,9 @@ function ContactCard({
         logged_at: serverTimestamp()
       });
       toast.success("Follow-up logged successfully");
-      window.location.reload();
+      setLogging(false);
+      setLogNotes("");
+      router.refresh();
     } catch (err) {
       console.error(err);
       toast.error("Failed to log follow-up");
@@ -280,7 +283,7 @@ function ContactCard({
                     try {
                       await deleteDoc(doc(db, "followup_contacts", contact.id!));
                       toast.success("Contact deleted");
-                      window.location.reload();
+                      router.refresh();
                     } catch (err) {
                       console.error(err);
                       toast.error("Failed to delete contact");

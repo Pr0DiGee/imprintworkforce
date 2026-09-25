@@ -207,7 +207,7 @@ export function ReportEditor({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: "zubbyobunadike@gmail.com",
+          to: "DEVELOPER_EMAIL",
           subject,
           html: emailHtml
         }),
@@ -313,22 +313,22 @@ export function ReportEditor({
           {!hideForwardButton && (
             <>
               <button
-                onClick={() => handleForwardEmail("imprintglobalministry@gmail.com", "Church Email")}
-                disabled={sendingEmailTo === "imprintglobalministry@gmail.com"}
+                onClick={() => handleForwardEmail("CHURCH_EMAIL", "Church Email")}
+                disabled={sendingEmailTo === "CHURCH_EMAIL"}
                 className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
                 style={{ background: "var(--accent)" }}
               >
                 <Send size={16} />
-                {sendingEmailTo === "imprintglobalministry@gmail.com" ? "Sending..." : "Church Email"}
+                {sendingEmailTo === "CHURCH_EMAIL" ? "Sending..." : "Church Email"}
               </button>
               <button
-                onClick={() => handleForwardEmail("adebayoadeboye.o@gmail.com", "Lead Pastor")}
-                disabled={sendingEmailTo === "adebayoadeboye.o@gmail.com"}
+                onClick={() => handleForwardEmail("LEAD_PASTOR_EMAIL", "Lead Pastor")}
+                disabled={sendingEmailTo === "LEAD_PASTOR_EMAIL"}
                 className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
                 style={{ background: "var(--accent)" }}
               >
                 <Send size={16} />
-                {sendingEmailTo === "adebayoadeboye.o@gmail.com" ? "Sending..." : "Lead Pastor"}
+                {sendingEmailTo === "LEAD_PASTOR_EMAIL" ? "Sending..." : "Lead Pastor"}
               </button>
             </>
           )}

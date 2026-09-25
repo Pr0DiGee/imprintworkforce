@@ -13,6 +13,8 @@
   --bg-input: #ffffff;
   --bg-elevated: #fbfaf7;
   --bg-muted: #f2f1eb;     /* --muted-bg */
+  --bg-base: #fbfaf7;
+  --bg-body: #fbfaf7;
 
   /* Borders */
   --border-primary: #e3e1da; /* --line */
@@ -54,6 +56,8 @@
   --bg-input: #1c1c1c;
   --bg-elevated: #262626;
   --bg-muted: #262626;
+  --bg-base: #121212;
+  --bg-body: #121212;
 
   /* Borders */
   --border-primary: #333333;
@@ -94,7 +98,7 @@
 body {
   background: var(--bg-page);
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 

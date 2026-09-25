@@ -13,6 +13,22 @@ export async function POST(request: Request) {
       );
     }
 
+    let recipient = to;
+    if (to === "CHURCH_EMAIL") {
+      recipient = process.env.CHURCH_EMAIL;
+    } else if (to === "LEAD_PASTOR_EMAIL") {
+      recipient = process.env.LEAD_PASTOR_EMAIL;
+    } else if (to === "DEVELOPER_EMAIL") {
+      recipient = process.env.DEVELOPER_EMAIL;
+    }
+
+    if (!recipient) {
+      return NextResponse.json(
+        { error: "Recipient email not configured in environment" },
+        { status: 400 }
+      );
+    }
+
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     const attachments = [];
@@ -25,7 +41,7 @@ export async function POST(request: Request) {
 
     const resendResponse = await resend.emails.send({
       from: "Imprint Workforce <no-reply@zubby.me>", // replace with your verified domain
-      to,
+      to: recipient,
       subject,
       html,
       attachments,
