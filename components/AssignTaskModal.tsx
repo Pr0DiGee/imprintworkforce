@@ -87,7 +87,7 @@ export function AssignTaskModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm transition-opacity"
+      role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm transition-opacity"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div

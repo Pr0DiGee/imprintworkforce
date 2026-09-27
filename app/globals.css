@@ -23,7 +23,7 @@
   /* Text */
   --text-primary: #1c1c1a;   /* --ink */
   --text-secondary: #5c5b56; /* --ink-soft */
-  --text-muted: #8c8b85;     /* --ink-faint */
+  --text-muted: #73726c;     /* WCAG AA compliant on --bg-page */
   --text-inverse: #ffffff;
 
   /* Accents */
@@ -66,7 +66,7 @@
   /* Text */
   --text-primary: #fbfaf7;
   --text-secondary: #c9c7bd;
-  --text-muted: #8c8b85;
+  --text-muted: #a3a19a;
   --text-inverse: #1c1c1a;
 
   /* Accents */

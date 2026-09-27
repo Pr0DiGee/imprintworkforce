@@ -324,9 +324,12 @@ export default function LoginPage() {
             }}
           >
             {/* Tabs */}
-            <div className="flex relative" style={{ borderBottom: "1px solid var(--border-primary)" }}>
+            <div role="tablist" className="flex relative" style={{ borderBottom: "1px solid var(--border-primary)" }}>
               <button
                 id="tab-login"
+                role="tab"
+                aria-selected={activeTab === "login"}
+                aria-controls="panel-login"
                 onClick={() => setActiveTab("login")}
                 className="flex-1 py-4 text-sm font-semibold transition-colors focus:outline-none z-10"
                 style={{
@@ -337,6 +340,9 @@ export default function LoginPage() {
               </button>
               <button
                 id="tab-signup"
+                role="tab"
+                aria-selected={activeTab === "signup"}
+                aria-controls="panel-signup"
                 onClick={() => setActiveTab("signup")}
                 className="flex-1 py-4 text-sm font-semibold transition-colors focus:outline-none z-10"
                 style={{
@@ -357,7 +363,12 @@ export default function LoginPage() {
             </div>
 
             {/* Form area */}
-            <div className="p-8">
+            <div 
+              id={activeTab === "login" ? "panel-login" : "panel-signup"} 
+              role="tabpanel" 
+              aria-labelledby={activeTab === "login" ? "tab-login" : "tab-signup"}
+              className="p-8"
+            >
               {activeTab === "login" ? <LoginForm /> : <SignUpForm />}
             </div>
           </div>

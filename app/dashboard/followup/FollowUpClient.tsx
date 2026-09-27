@@ -109,8 +109,10 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-[var(--bg-input)] rounded-lg p-1 border w-fit mb-6" style={{ borderColor: "var(--border-primary)" }}>
+      <div role="tablist" className="flex bg-input rounded-lg p-1 border border-border w-fit mb-6">
         <button
+          role="tab"
+          aria-selected={activeTab === "MY_FOLLOW_UPS"}
           onClick={() => setActiveTab("MY_FOLLOW_UPS")}
           className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === "MY_FOLLOW_UPS" ? "shadow-sm" : ""}`}
           style={{
@@ -121,6 +123,8 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
           My Follow-Ups ({myContacts.length})
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === "GLOBAL_LIST"}
           onClick={() => setActiveTab("GLOBAL_LIST")}
           className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === "GLOBAL_LIST" ? "shadow-sm" : ""}`}
           style={{
@@ -444,7 +448,7 @@ function AddContactModal({ onClose, user, campusView, onSuccess }: { onClose: ()
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
       <div 
         className="w-full max-w-md rounded-xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200"
         style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}

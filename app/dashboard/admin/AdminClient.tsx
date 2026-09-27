@@ -10,6 +10,7 @@ import {
 } from "@/types";
 import { toast } from "sonner";
 import { Avatar } from "@/components/Avatar";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const ALL_ROLES: AppRole[] = ["WORKER", "PASTOR", "LEAD_PASTOR", "DEVOTION_LEAD", "ADMIN"];
 
@@ -46,18 +47,22 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
     setEditingUid(null);
   }
 
-  const handleDeleteUser = async (uid: string) => {
-    if (!window.confirm("Are you sure you want to permanently delete this user?")) return;
+  const [deletingUid, setDeletingUid] = useState<string | null>(null);
+
+  const handleDeleteUser = async () => {
+    if (!deletingUid) return;
     try {
-      const res = await fetch(`/api/admin/users?uid=${uid}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/users?uid=${deletingUid}`, { method: "DELETE" });
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to delete user");
       }
-      setUsers(users.filter(u => u.uid !== uid));
+      setUsers(users.filter(u => u.uid !== deletingUid));
       toast.success("User deleted successfully");
     } catch (err: any) {
       toast.error(err.message);
+    } finally {
+      setDeletingUid(null);
     }
   };
 
@@ -267,7 +272,7 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDeleteUser(user.uid)}
+                            onClick={() => setDeletingUid(user.uid)}
                             className="text-xs font-medium transition-opacity hover:opacity-80"
                             style={{ color: "var(--danger)" }}
                           >
@@ -310,6 +315,15 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
           </div>
         </dl>
       </div>
+      <ConfirmDialog
+        isOpen={deletingUid !== null}
+        title="Delete User"
+        message="Are you sure you want to permanently delete this user? This action cannot be undone."
+        confirmLabel="Delete"
+        isDestructive
+        onConfirm={handleDeleteUser}
+        onCancel={() => setDeletingUid(null)}
+      />
     </div>
   );
 }
@@ -370,7 +384,7 @@ function CreateUserModal({ onCreated }: { onCreated: (u: UserProfile) => void })
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div 
         className="w-full max-w-md rounded-xl p-6 space-y-4"
         style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}

@@ -73,6 +73,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           className={linkClasses(href)}
           style={linkStyle(href)}
           onClick={onNavigate}
+          aria-current={isActive(pathname, href) ? "page" : undefined}
         >
           <Icon size={18} className="shrink-0" />
           {label}
@@ -88,6 +89,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             className={`${linkClasses("/dashboard/attendance")} text-xs py-1.5`}
             style={linkStyle("/dashboard/attendance")}
             onClick={onNavigate}
+            aria-current={isActive(pathname, "/dashboard/attendance") ? "page" : undefined}
           >
             Attendance
           </Link>
@@ -97,6 +99,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             className={`${linkClasses("/dashboard/reports/all")} text-xs py-1.5`}
             style={linkStyle("/dashboard/reports/all")}
             onClick={onNavigate}
+            aria-current={isActive(pathname, "/dashboard/reports/all") ? "page" : undefined}
           >
             All Reports
           </Link>
@@ -106,6 +109,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             className={`${linkClasses("/dashboard/reports/history")} text-xs py-1.5`}
             style={linkStyle("/dashboard/reports/history")}
             onClick={onNavigate}
+            aria-current={isActive(pathname, "/dashboard/reports/history") ? "page" : undefined}
           >
             History
           </Link>
@@ -125,6 +129,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               color: isActive(pathname, "/dashboard/admin") ? "var(--accent-text)" : "#a78bfa",
             }}
             onClick={onNavigate}
+            aria-current={isActive(pathname, "/dashboard/admin") ? "page" : undefined}
           >
             <Settings size={18} className="shrink-0" />
             User Management

@@ -589,7 +589,9 @@ export function NotesClient({
             {notes.map((note) => (
               <div
                 key={note.id}
-                className="group rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.01]"
+                role="button"
+                tabIndex={0}
+                className="group rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 style={{
                   background: "var(--bg-card)",
                   border: "1px solid var(--border-primary)",
@@ -599,6 +601,14 @@ export function NotesClient({
                   setActiveNote(note);
                   setIsNewNote(false);
                   setView("editor");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setActiveNote(note);
+                    setIsNewNote(false);
+                    setView("editor");
+                  }
                 }}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -798,7 +808,9 @@ export function NotesClient({
           {displayFolders.map((folder) => (
             <div
               key={folder.id}
-              className="group rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.02]"
+              role="button"
+              tabIndex={0}
+              className="group rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               style={{
                 background: "var(--bg-card)",
                 border: "1px solid var(--border-primary)",
@@ -806,6 +818,12 @@ export function NotesClient({
               }}
               onClick={() => {
                 if (editingFolderId !== folder.id) openFolder(folder);
+              }}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && editingFolderId !== folder.id) {
+                  e.preventDefault();
+                  openFolder(folder);
+                }
               }}
             >
               {editingFolderId === folder.id ? (
