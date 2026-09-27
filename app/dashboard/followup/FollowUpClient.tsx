@@ -7,7 +7,7 @@ import { addDoc, collection, serverTimestamp, deleteDoc, doc } from "firebase/fi
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase/client";
 import { Phone, MessageSquare, MapPin, User, CheckCircle2, UserCheck, Search, Plus, Trash2 } from "lucide-react";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 import { GlobalFollowUpTable } from "@/components/GlobalFollowUpTable";
 import { formatRelativeCheckInDate } from "@/lib/date";
 
@@ -25,7 +25,6 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
   const [activeTab, setActiveTab] = useState<Tab>("MY_FOLLOW_UPS");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
-  const toast = useToast();
   const router = useRouter();
 
   const isPastor = user.role === "PASTOR" || user.role === "LEAD_PASTOR";
@@ -225,7 +224,6 @@ function ContactCard({
   const [logMethod, setLogMethod] = useState<FollowUpMethod>("CALL");
   const [logNotes, setLogNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const toast = useToast();
   const router = useRouter();
 
   const handleLog = async () => {
@@ -424,8 +422,6 @@ function AddContactModal({ onClose, user, campusView, onSuccess }: { onClose: ()
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
-  const toast = useToast();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !phone) return;

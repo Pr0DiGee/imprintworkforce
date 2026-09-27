@@ -7,7 +7,7 @@ import { Feedback, UserProfile } from "@/types";
 import { formatTargetSunday } from "@/lib/date";
 import { WeekPicker } from "@/components/WeekPicker";
 import { Avatar } from "@/components/Avatar";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 
 interface FeedbackClientProps {
   user: UserProfile;
@@ -26,8 +26,6 @@ export function FeedbackClient({
   usersMap,
   isPastor,
 }: FeedbackClientProps) {
-  const { success, error } = useToast();
-
   const [targetSunday, setTargetSunday] = useState(currentSunday);
   const isReadOnly = targetSunday !== currentSunday;
 
@@ -104,9 +102,9 @@ export function FeedbackClient({
         return [...filtered, newFeedbackData];
       });
       
-      success(isNew ? "Feedback submitted" : "Feedback updated");
+      toast.success(isNew ? "Feedback submitted" : "Feedback updated");
     } catch (err) {
-      error(err instanceof Error ? err.message : "Failed to submit feedback.");
+      toast.error(err instanceof Error ? err.message : "Failed to submit feedback.");
     } finally {
       setSubmitting(false);
     }

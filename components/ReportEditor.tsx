@@ -11,7 +11,7 @@ import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { Report, Department, ReportStatus } from "@/types";
 import { getTargetSundayString } from "@/lib/date";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 import { ToolbarBtn } from "@/components/ToolbarBtn";
 import Image from "next/image";
 import { Bold, Italic, Type, FileText, Download, Mail, Copy, Send } from "lucide-react";
@@ -40,7 +40,6 @@ export function ReportEditor({
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [sendingEmailTo, setSendingEmailTo] = useState<string | null>(null);
   const [editorUpdate, setEditorUpdate] = useState(0);
-  const { success, error } = useToast();
   const pageRef = useRef<HTMLDivElement>(null);
 
   const initialContent = useCallback(() => {
@@ -137,9 +136,9 @@ export function ReportEditor({
 
       onSaved?.(updatedReport);
       setLastSaved(new Date());
-      success(status === "SUBMITTED" ? "Report submitted successfully" : "Draft saved successfully");
+      toast.success(status === "SUBMITTED" ? "Report submitted successfully" : "Draft saved successfully");
     } catch (err) {
-      error(err instanceof Error ? err.message : "Failed to save report.");
+      toast.error(err instanceof Error ? err.message : "Failed to save report.");
     } finally {
       setSaving(false);
     }
@@ -184,9 +183,9 @@ export function ReportEditor({
         throw new Error(errorData?.error?.message || "Failed to send email");
       }
       
-      success(`Report forwarded to ${label}!`);
+      toast.success(`Report forwarded to ${label}!`);
     } catch (err) {
-      error(err instanceof Error ? err.message : "An error occurred while emailing.");
+      toast.error(err instanceof Error ? err.message : "An error occurred while emailing.");
     } finally {
       setSendingEmailTo(null);
     }
@@ -227,9 +226,9 @@ export function ReportEditor({
         throw new Error(errorData?.error?.message || "Failed to send test email");
       }
       
-      success("Test report forwarded to your email!");
+      toast.success("Test report forwarded to your email!");
     } catch (err) {
-      error(err instanceof Error ? err.message : "An error occurred while emailing.");
+      toast.error(err instanceof Error ? err.message : "An error occurred while emailing.");
     } finally {
       setSendingEmailTo(null);
     }

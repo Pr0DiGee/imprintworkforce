@@ -12,7 +12,7 @@ import {
 } from "@/types";
 import { getShortDayLabel } from "@/lib/date";
 import { Avatar } from "@/components/Avatar";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 import { Printer } from "lucide-react";
 
 interface RosterClientProps {
@@ -32,8 +32,6 @@ export function RosterClient({
   currentWindowSunday,
   canEdit: hasEditRole,
 }: RosterClientProps) {
-  const { success, error } = useToast();
-
   const [targetSunday, setTargetSunday] = useState(stripDates[1]); // Default to upcoming Sunday
   const [allSlots, setAllSlots] = useState(initialSlots);
   const [editMode, setEditMode] = useState(false);
@@ -105,9 +103,9 @@ export function RosterClient({
       }));
       
       setEditMode(false);
-      success("Roster saved successfully");
+      toast.success("Roster saved successfully");
     } catch (err) {
-      error("Failed to save roster.");
+      toast.error("Failed to save roster.");
     } finally {
       setSaving(false);
     }
@@ -132,9 +130,9 @@ export function RosterClient({
         return { ...prev, [targetSunday]: updatedSunday };
       });
       
-      success(`You have claimed ${ROSTER_DUTY_LABELS[duty]}`);
+      toast.success(`You have claimed ${ROSTER_DUTY_LABELS[duty]}`);
     } catch (err) {
-      error("Failed to claim duty.");
+      toast.error("Failed to claim duty.");
     } finally {
       setSaving(false);
     }

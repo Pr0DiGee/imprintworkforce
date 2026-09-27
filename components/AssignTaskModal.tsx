@@ -4,7 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import { collection, getDocs, addDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { UserProfile } from "@/types";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/Skeleton";
 
 interface AssignTaskModalProps {
@@ -26,8 +26,6 @@ export function AssignTaskModal({
   const [deadline, setDeadline] = useState("");
   const [submitting, setSubmitting] = useState(false);
   
-  const { success, error } = useToast();
-
   useEffect(() => {
     getDocs(collection(db, "users"))
       .then((snap) => {
@@ -37,7 +35,7 @@ export function AssignTaskModal({
         setUsers(list.sort((a, b) => a.name.localeCompare(b.name)));
         if (list.length > 0) setAssignedTo(list[0].uid);
       })
-      .catch(() => error("Could not load users."))
+      .catch(() => toast.error("Could not load users."))
       .finally(() => setLoadingUsers(false));
   }, [error]);
 
@@ -73,11 +71,11 @@ export function AssignTaskModal({
         }).catch(console.error);
       }
 
-      success("Task assigned successfully");
+      toast.success("Task assigned successfully");
       onAssigned();
       onClose();
     } catch (err) {
-      error(err instanceof Error ? err.message : "Failed to create task.");
+      toast.error(err instanceof Error ? err.message : "Failed to create task.");
     } finally {
       setSubmitting(false);
     }

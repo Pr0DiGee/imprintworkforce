@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { collection, getDocs, doc, setDoc, serverTimestamp, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { DevotionDaily, UserProfile } from "@/types";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 import { getMonToSatDates, addWeeksToDate, getShortDayLabel } from "@/lib/date";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -126,8 +126,6 @@ export function DevotionClient({
   initialTargetMonday,
   hasPermission,
 }: DevotionClientProps) {
-  const { success, error } = useToast();
-
   const [targetMonday, setTargetMonday] = useState(initialTargetMonday);
   const days = useMemo(() => getMonToSatDates(targetMonday), [targetMonday]);
 
@@ -190,7 +188,7 @@ export function DevotionClient({
         updated_at: serverTimestamp(),
       }, { merge: true });
     } catch (err) {
-      error("Failed to update devotion data");
+      toast.error("Failed to update devotion data");
     } finally {
       setSavingState(prev => ({ ...prev, [date]: false }));
     }
@@ -198,7 +196,7 @@ export function DevotionClient({
 
   const handleNotesSave = async (date: string, notes: string) => {
     await handleDayUpdate(date, { teaching_notes: notes });
-    success("Teaching notes saved");
+    toast.success("Teaching notes saved");
     setExpandedDate(null);
   };
 

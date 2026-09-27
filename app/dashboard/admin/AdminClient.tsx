@@ -8,7 +8,7 @@ import {
   DEPARTMENTS,
   DEPARTMENT_LABELS,
 } from "@/types";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 import { Avatar } from "@/components/Avatar";
 
 const ALL_ROLES: AppRole[] = ["WORKER", "PASTOR", "LEAD_PASTOR", "DEVOTION_LEAD", "ADMIN"];
@@ -28,8 +28,6 @@ interface AdminClientProps {
 }
 
 export function AdminClient({ user: currentUser, initialUsers }: AdminClientProps) {
-  const { success, error } = useToast();
-
   const [users, setUsers] = useState<UserProfile[]>(initialUsers);
   const [editingUid, setEditingUid] = useState<string | null>(null);
   const [editRole, setEditRole] = useState<AppRole>("WORKER");
@@ -57,9 +55,9 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
         throw new Error(errorData.error || "Failed to delete user");
       }
       setUsers(users.filter(u => u.uid !== uid));
-      success("User deleted successfully");
+      toast.success("User deleted successfully");
     } catch (err: any) {
-      error(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -89,10 +87,10 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
       );
 
       const userName = users.find((u) => u.uid === uid)?.name ?? uid;
-      success(`Updated ${userName} → ${ROLE_LABELS[editRole]}`);
+      toast.success(`Updated ${userName} → ${ROLE_LABELS[editRole]}`);
       setEditingUid(null);
     } catch (err) {
-      error(err instanceof Error ? err.message : "Failed to update user.");
+      toast.error(err instanceof Error ? err.message : "Failed to update user.");
     } finally {
       setSaving(false);
     }
@@ -324,8 +322,6 @@ function CreateUserModal({ onCreated }: { onCreated: (u: UserProfile) => void })
   const [role, setRole] = useState<AppRole>("WORKER");
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
-  const { success, error } = useToast();
-
   const toggleDept = (dept: Department) => {
     setDepartments(prev => 
       prev.includes(dept) ? prev.filter(d => d !== dept) : [...prev, dept]
@@ -351,11 +347,11 @@ function CreateUserModal({ onCreated }: { onCreated: (u: UserProfile) => void })
         role,
         departments,
       });
-      success(`User ${name} created successfully.`);
+      toast.success(`User ${name} created successfully.`);
       setOpen(false);
       setName(""); setEmail(""); setPassword(""); setRole("WORKER"); setDepartments([]);
     } catch (err: any) {
-      error(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }

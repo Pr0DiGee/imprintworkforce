@@ -14,7 +14,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { ToolbarBtn } from "@/components/ToolbarBtn";
@@ -213,8 +213,6 @@ export function NotesClient({
   initialFolders,
   initialNoteCounts,
 }: NotesClientProps) {
-  const { success, error } = useToast();
-
   // Navigation state
   const [view, setView] = useState<View>("folders");
   const [activeFolder, setActiveFolder] = useState<NoteFolder | null>(null);
@@ -267,9 +265,9 @@ export function NotesClient({
       setNoteCounts((prev) => ({ ...prev, [ref.id]: 0 }));
       setNewFolderName("");
       setShowNewFolder(false);
-      success("Folder created");
+      toast.success("Folder created");
     } catch {
-      error("Failed to create folder");
+      toast.error("Failed to create folder");
     } finally {
       setSaving(false);
     }
@@ -290,9 +288,9 @@ export function NotesClient({
         )
       );
       setEditingFolderId(null);
-      success("Folder renamed");
+      toast.success("Folder renamed");
     } catch {
-      error("Failed to rename folder");
+      toast.error("Failed to rename folder");
     } finally {
       setSaving(false);
     }
@@ -325,9 +323,9 @@ export function NotesClient({
       setFolders((prev) => prev.filter((f) => f.id !== folder.id));
       const { [folder.id!]: _, ...rest } = noteCounts;
       setNoteCounts(rest);
-      success("Folder deleted");
+      toast.success("Folder deleted");
     } catch {
-      error("Failed to delete folder");
+      toast.error("Failed to delete folder");
     } finally {
       setSaving(false);
     }
@@ -355,7 +353,7 @@ export function NotesClient({
           )
         );
       } catch {
-        error("Failed to load notes");
+        toast.error("Failed to load notes");
       } finally {
         setFetchingNotes(false);
       }
@@ -400,9 +398,9 @@ export function NotesClient({
       setView("notes");
       setActiveNote(null);
       setIsNewNote(false);
-      success("Note saved");
+      toast.success("Note saved");
     } catch {
-      error("Failed to save note");
+      toast.error("Failed to save note");
     } finally {
       setSaving(false);
     }
@@ -418,9 +416,9 @@ export function NotesClient({
         ...prev,
         [note.folder_id]: Math.max(0, (prev[note.folder_id] || 1) - 1),
       }));
-      success("Note deleted");
+      toast.success("Note deleted");
     } catch {
-      error("Failed to delete note");
+      toast.error("Failed to delete note");
     } finally {
       setSaving(false);
     }

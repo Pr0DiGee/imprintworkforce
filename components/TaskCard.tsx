@@ -4,7 +4,7 @@ import { useState } from "react";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { Task, TaskStatus } from "@/types";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 import { Avatar } from "@/components/Avatar";
 import { Trash2 } from "lucide-react";
 
@@ -36,8 +36,6 @@ export function TaskCard({
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [updating, setUpdating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const { success, error } = useToast();
-
   // Handle both client SDK Timestamps and admin SDK Timestamps
   const deadline = task.deadline?.toDate?.()
     ?? ((task.deadline as unknown as { _seconds?: number })?._seconds
@@ -51,10 +49,10 @@ export function TaskCard({
     try {
       await updateDoc(doc(db, "tasks", task.id), { status: next });
       setStatus(next);
-      success(`Task marked as ${STATUS_LABELS[next]}`);
+      toast.success(`Task marked as ${STATUS_LABELS[next]}`);
       onUpdate?.();
     } catch (err) {
-      error(err instanceof Error ? err.message : "Failed to update status.");
+      toast.error(err instanceof Error ? err.message : "Failed to update status.");
     } finally {
       setUpdating(false);
     }
@@ -65,10 +63,10 @@ export function TaskCard({
     setUpdating(true);
     try {
       await deleteDoc(doc(db, "tasks", task.id));
-      success("Task deleted");
+      toast.success("Task deleted");
       onUpdate?.();
     } catch (err) {
-      error(err instanceof Error ? err.message : "Failed to delete task.");
+      toast.error(err instanceof Error ? err.message : "Failed to delete task.");
     } finally {
       setUpdating(false);
       setConfirmDelete(false);
