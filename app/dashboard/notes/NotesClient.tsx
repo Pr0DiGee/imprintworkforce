@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   collection,
   doc,
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { ToolbarBtn } from "@/components/ToolbarBtn";
+import { EmptyState } from "@/components/EmptyState";
 import type { UserProfile, NoteFolder, Note } from "@/types";
 import {
   FolderPlus,
@@ -245,6 +246,44 @@ export function NotesClient({
   };
 
   const displayFolders = [QUICK_NOTES_FOLDER, ...folders];
+
+  
+  // ── URL State Sync ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const folderId = params.get("folder");
+    const noteId = params.get("note");
+    
+    if (folderId) {
+      const folder = displayFolders.find(f => f.id === folderId);
+      if (folder) {
+        setActiveFolder(folder);
+        setView(noteId ? "editor" : "notes");
+        if (noteId) {
+          // Note will be fetched and set later by another effect if needed, 
+          // or we just rely on user clicking. To keep it simple, we just set the folder.
+          // Fetching the note specifically requires knowing its content.
+        }
+      }
+    }
+  }, []); // Run once on mount
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (activeFolder) {
+      url.searchParams.set("folder", activeFolder.id || "");
+    } else {
+      url.searchParams.delete("folder");
+    }
+    if (activeNote && view === "editor") {
+      url.searchParams.set("note", activeNote.id || "");
+    } else {
+      url.searchParams.delete("note");
+    }
+    window.history.replaceState({}, "", url.toString());
+  }, [activeFolder, activeNote, view]);
+
 
   // ── Folder CRUD ───────────────────────────────────────────────────────────────
 
@@ -559,31 +598,17 @@ export function NotesClient({
             ))}
           </div>
         ) : notes.length === 0 ? (
-          <div
-            className="text-center py-16 rounded-xl"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-primary)",
+          <EmptyState
+            icon={StickyNote}
+            title="No notes yet"
+            description="Keep your personal thoughts, sermon notes, and ideas organized in this folder."
+            actionLabel="Create Note"
+            onAction={() => {
+              setIsNewNote(true);
+              setActiveNote(null);
+              setView("editor");
             }}
-          >
-            <StickyNote
-              size={40}
-              className="mx-auto mb-3"
-              style={{ color: "var(--text-muted)" }}
-            />
-            <p
-              className="text-sm font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              No notes yet
-            </p>
-            <p
-              className="text-xs mt-1"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Tap "New Note" to get started
-            </p>
-          </div>
+          />
         ) : (
           <div className="space-y-2">
             {notes.map((note) => (
@@ -778,31 +803,13 @@ export function NotesClient({
 
       {/* Folders grid */}
       {displayFolders.length === 0 && !showNewFolder ? (
-        <div
-          className="text-center py-20 rounded-xl"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border-primary)",
-          }}
-        >
-          <FolderOpen
-            size={48}
-            className="mx-auto mb-4"
-            style={{ color: "var(--text-muted)" }}
-          />
-          <p
-            className="text-base font-medium"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            No folders yet
-          </p>
-          <p
-            className="text-sm mt-1"
-            style={{ color: "var(--text-muted)" }}
-          >
-            Create a folder to start organizing your notes
-          </p>
-        </div>
+        <EmptyState
+          icon={FolderOpen}
+          title="No folders yet"
+          description="Create a folder to start organizing your personal thoughts, sermon notes, and ideas."
+          actionLabel="New Folder"
+          onAction={() => setShowNewFolder(true)}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {displayFolders.map((folder) => (

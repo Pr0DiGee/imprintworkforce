@@ -3,6 +3,7 @@
 import { formatTargetSunday } from "@/lib/date";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 
 interface WeekSummary {
   targetSunday: string;
@@ -27,17 +28,11 @@ export function ReportsHistoryClient({ history }: ReportsHistoryClientProps) {
 
       <div className="space-y-3">
         {history.length === 0 ? (
-          <div
-            className="rounded-lg px-5 py-6 text-center border-dashed border-2"
-            style={{
-              background: "var(--bg-elevated)",
-              borderColor: "var(--border-primary)",
-            }}
-          >
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              No reports have been archived yet.
-            </p>
-          </div>
+          <EmptyState
+            icon={ArrowRight}
+            title="No history found"
+            description="No reports have been archived yet. Once reports are submitted, past weeks will appear here."
+          />
         ) : (
           history.map((week) => (
             <Link

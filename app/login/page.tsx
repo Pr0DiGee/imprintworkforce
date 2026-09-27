@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
+import Link from "next/link";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/client";
 
@@ -113,6 +114,15 @@ function LoginForm() {
           }}
           placeholder="••••••••"
         />
+        <div className="flex justify-end mt-2">
+          <Link 
+            href="/forgot-password" 
+            className="text-xs font-medium hover:underline decoration-[var(--accent)] underline-offset-2"
+            style={{ color: "var(--accent-text)" }}
+          >
+            Forgot password?
+          </Link>
+        </div>
       </div>
 
       {error && (

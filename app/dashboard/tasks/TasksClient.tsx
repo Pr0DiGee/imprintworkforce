@@ -11,6 +11,8 @@ import {
 import { db } from "@/lib/firebase/client";
 import { TaskCard } from "@/components/TaskCard";
 import { AssignTaskModal } from "@/components/AssignTaskModal";
+import { CheckSquare } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { Task, UserProfile } from "@/types";
 import { isPastor as checkPastor } from "@/lib/roles";
 
@@ -121,19 +123,13 @@ export function TasksClient({
       </div>
 
       {activeTasks.length === 0 ? (
-        <div
-          className="rounded-lg px-5 py-8 text-center border-dashed border-2"
-          style={{
-            background: "var(--bg-elevated)",
-            borderColor: "var(--border-primary)",
-          }}
-        >
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            {userIsPastor
-              ? 'No active tasks. Use "Assign Task" to create one.'
-              : "You have no active tasks right now."}
-          </p>
-        </div>
+        <EmptyState
+          icon={CheckSquare}
+          title="You're all caught up!"
+          description={userIsPastor ? "No active tasks. Use 'Assign Task' to delegate work to your team." : "You have no active tasks right now. Enjoy your day!"}
+          actionLabel={userIsPastor ? "Assign Task" : undefined}
+          onAction={userIsPastor ? () => setShowModal(true) : undefined}
+        />
       ) : (
         <div className="space-y-3">
           {activeTasks.map((task) => (
