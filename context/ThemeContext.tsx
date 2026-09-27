@@ -17,7 +17,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Read persisted preference on mount
   useEffect(() => {
-    const stored = localStorage.getItem("crp-theme") as Theme | null;
+    const stored = localStorage.getItem("iw-theme") as Theme | null;
     if (stored === "light" || stored === "dark") {
       setTheme(stored);
     } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
@@ -35,17 +35,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       html.classList.remove("dark");
     }
-    localStorage.setItem("crp-theme", theme);
+    localStorage.setItem("iw-theme", theme);
   }, [theme, mounted]);
 
   const toggle = useCallback(() => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   }, []);
-
-  // Prevent flash of wrong theme
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggle }}>
