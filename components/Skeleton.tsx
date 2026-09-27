@@ -1,13 +1,12 @@
+import { cn } from "@/lib/utils";
+
 export function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`skeleton ${className}`} />;
+  return <div className={cn("bg-muted animate-pulse rounded-md", className)} />;
 }
 
 export function SkeletonCard() {
   return (
-    <div
-      className="rounded-lg p-4 space-y-3"
-      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
-    >
+    <div className="rounded-lg p-4 space-y-3 bg-card border border-border shadow-sm">
       <Skeleton className="h-4 w-3/4" />
       <Skeleton className="h-3 w-full" />
       <Skeleton className="h-3 w-1/2" />
