@@ -37,7 +37,7 @@ export function AssignTaskModal({
       })
       .catch(() => toast.error("Could not load users."))
       .finally(() => setLoadingUsers(false));
-  }, [error]);
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

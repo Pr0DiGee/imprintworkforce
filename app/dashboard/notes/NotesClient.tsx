@@ -358,7 +358,7 @@ export function NotesClient({
         setFetchingNotes(false);
       }
     },
-    [user.uid, error]
+    [user.uid]
   );
 
   const handleSaveNote = async (title: string, content: string) => {
