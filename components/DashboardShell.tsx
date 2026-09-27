@@ -130,7 +130,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Mobile Bottom Nav ───────────────────────────────────────────── */}
       <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around pb-safe pt-2 px-2"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around pb-[env(safe-area-inset-bottom)] pt-2 px-2"
         style={{
           background: "var(--bg-sidebar)",
           borderTop: "1px solid var(--border-primary)",

@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);

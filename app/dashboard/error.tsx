@@ -20,13 +20,14 @@ export default function DashboardError({
       <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
         <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-500" />
       </div>
-      <h2 className="text-xl font-semibold mb-2 text-foreground">Something went wrong!</h2>
-      <p className="text-muted-foreground mb-6 max-w-md">
+      <h2 className="text-xl font-semibold mb-2" style={{ color: "var(--text-primary)" }}>Something went wrong!</h2>
+      <p className="mb-6 max-w-md" style={{ color: "var(--text-secondary)" }}>
         We encountered an error while loading this page. This could be due to a network issue or missing data.
       </p>
       <button
         onClick={() => reset()}
-        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
+        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow h-9 px-4 py-2"
+        style={{ background: "var(--accent)", color: "var(--text-inverse)" }}
       >
         Try again
       </button>

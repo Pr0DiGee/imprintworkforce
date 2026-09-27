@@ -93,6 +93,23 @@ function NoteEditor({
     },
   });
 
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!editor || !note) return; // Only auto-save existing notes
+    const handleUpdate = () => {
+      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        onSave(title, JSON.stringify(editor.getJSON()));
+      }, 1500);
+    };
+    editor.on('update', handleUpdate);
+    return () => {
+      editor.off('update', handleUpdate);
+      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+    };
+  }, [editor, title, onSave, note]);
+
   if (!editor) return null;
 
   return (
@@ -249,7 +266,9 @@ export function NotesClient({
 
   
   // ── URL State Sync ─────────────────────────────────────────────────────────────
+  const didRestoreUrl = useRef(false);
   useEffect(() => {
+    if (didRestoreUrl.current) return;
     const params = new URLSearchParams(window.location.search);
     const folderId = params.get("folder");
     const noteId = params.get("note");
@@ -259,14 +278,12 @@ export function NotesClient({
       if (folder) {
         setActiveFolder(folder);
         setView(noteId ? "editor" : "notes");
-        if (noteId) {
-          // Note will be fetched and set later by another effect if needed, 
-          // or we just rely on user clicking. To keep it simple, we just set the folder.
-          // Fetching the note specifically requires knowing its content.
-        }
+        didRestoreUrl.current = true;
       }
+    } else {
+      didRestoreUrl.current = true;
     }
-  }, []); // Run once on mount
+  }, [displayFolders]); // Run once folders load
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

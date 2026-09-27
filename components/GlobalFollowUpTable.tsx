@@ -153,7 +153,7 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: G
       {/* Mobile Cards */}
       <div className="md:hidden flex flex-col gap-4 mt-2">
         {sortedContacts.map((contact) => {
-          const contactLogs = logs.filter(l => l.contact_id === contact.id).sort((a, b) => (b.logged_at as any).toMillis() - (a.logged_at as any).toMillis());
+          const contactLogs = logs.filter(l => l.contact_id === contact.id).sort((a, b) => new Date(b.logged_at as any).getTime() - new Date(a.logged_at as any).getTime());
           const latestLog = contactLogs[0];
           const isExpanded = expandedId === contact.id;
 
