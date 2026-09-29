@@ -101,12 +101,27 @@ function NoteEditor({
       if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
       autoSaveTimeoutRef.current = setTimeout(() => {
         onSave(title, JSON.stringify(editor.getJSON()));
+        autoSaveTimeoutRef.current = null;
       }, 1500);
     };
+    
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (autoSaveTimeoutRef.current) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
+      }
+    };
+
     editor.on('update', handleUpdate);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
     return () => {
       editor.off('update', handleUpdate);
-      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+        onSave(title, JSON.stringify(editor.getJSON()));
+      }
     };
   }, [editor, title, onSave, note]);
 
