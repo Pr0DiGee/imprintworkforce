@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase/client";
 import { UserProfile } from "@/types";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/Skeleton";
+import { triggerPushNotification } from "@/lib/client-notifications";
 
 interface AssignTaskModalProps {
   assignedByUid: string;
@@ -58,18 +59,12 @@ export function AssignTaskModal({
         created_at: serverTimestamp(),
       });
 
-      const assignee = users.find((u) => u.uid === assignedTo);
-      if (assignee && assignee.email) {
-        fetch("/api/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: assignee.email,
-            subject: "New Task Assigned in Church OS",
-            html: `<p>Hello ${assignee.name},</p><p>You have been assigned a new task: <strong>${description.trim()}</strong></p><p>Deadline: ${deadlineDate.toLocaleDateString()}</p><p>Log in to Church OS to view your tasks.</p>`,
-          }),
-        }).catch(console.error);
-      }
+      triggerPushNotification({
+        uids: [assignedTo],
+        title: "New Task Assigned",
+        body: `"${description.trim()}" (Due: ${deadlineDate.toLocaleDateString()})`,
+        url: "/dashboard/tasks",
+      });
 
       toast.success("Task assigned successfully");
       onAssigned();

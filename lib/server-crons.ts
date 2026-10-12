@@ -1,8 +1,8 @@
 import { getAdminDb } from "@/lib/firebase/admin";
-import { Resend } from "resend";
 import { formatTargetSunday } from "@/lib/date";
 import { DevotionDaily, Task, ROSTER_DUTY_LABELS, Roster } from "@/types";
 import { Timestamp } from "firebase-admin/firestore";
+import { sendPushNotification } from "@/lib/push-notifications";
 
 function getISODateOffset(daysOffset: number): string {
   const d = new Date();
@@ -11,11 +11,11 @@ function getISODateOffset(daysOffset: number): string {
 }
 
 export async function sendTaskReminders() {
-  console.log("[CRON] Running Task Reminders");
+  console.log("[CRON] Running Task Reminders via Web Push");
   try {
     const db = getAdminDb();
     
-    // We want tasks that are NOT completed.
+    // Query active tasks
     const tasksSnap = await db
       .collection("tasks")
       .where("status", "in", ["ASSIGNED", "IN_PROGRESS"])
@@ -49,17 +49,6 @@ export async function sendTaskReminders() {
       return;
     }
 
-    const usersSnap = await db.collection("users").get();
-    const userMap: Record<string, { email: string; name: string }> = {};
-    usersSnap.docs.forEach(doc => {
-      const data = doc.data();
-      if (data.email) {
-        userMap[doc.id] = { email: data.email, name: data.name };
-      }
-    });
-
-    const resend = new Resend(process.env.RESEND_API_KEY as string);
-
     const userTasks: Record<string, Task[]> = {};
     tasksToRemind.forEach(task => {
       if (!userTasks[task.assigned_to]) {
@@ -69,51 +58,25 @@ export async function sendTaskReminders() {
     });
 
     for (const [userId, tList] of Object.entries(userTasks)) {
-      const user = userMap[userId];
-      if (!user) continue;
+      const summary = tList.length === 1 
+        ? `Task: "${tList[0].description}" is due soon or overdue.`
+        : `You have ${tList.length} task(s) due soon or overdue.`;
 
-      const tasksHtml = tList.map(t => {
-        const deadlineDate = (t.deadline as unknown as Timestamp).toDate();
-        const isOverdue = deadlineDate.getTime() < now.getTime();
-        const dateStr = deadlineDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-        return `<li>
-          <strong>${t.description}</strong><br/>
-          Status: ${t.status} | Deadline: <span style="color: ${isOverdue ? 'red' : 'inherit'}">${dateStr} ${isOverdue ? '(OVERDUE)' : ''}</span>
-        </li>`;
-      }).join("");
-
-      const html = `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-          <h2>Imprint Workforce: Task Reminders</h2>
-          <p>Hello ${user.name},</p>
-          <p>You have ${tList.length} task(s) that are due tomorrow or became overdue today:</p>
-          <ul>
-            ${tasksHtml}
-          </ul>
-          <p>Please log in to the dashboard to update their status.</p>
-          <br/>
-          <p>Blessings,<br/>The Imprint Team</p>
-        </div>
-      `;
-
-      try {
-        await resend.emails.send({
-          from: "Imprint Workforce <no-reply@zubby.me>", 
-          to: user.email,
-          subject: `Reminder: You have ${tList.length} task(s) due soon`,
-          html,
-        });
-      } catch (err) {
-        console.error("Failed to send email to", user.email, err);
-      }
+      await sendPushNotification({
+        uids: [userId],
+        title: "Task Reminder",
+        body: summary,
+        url: "/dashboard/tasks",
+      });
     }
+    console.log(`[CRON] Task reminders pushed to ${Object.keys(userTasks).length} user(s).`);
   } catch (error) {
     console.error("Cron Error (Tasks):", error);
   }
 }
 
 export async function sendDevotionReminders() {
-  console.log("[CRON] Running Devotion Reminders");
+  console.log("[CRON] Running Devotion Reminders via Web Push");
   try {
     const db = getAdminDb();
     
@@ -127,68 +90,37 @@ export async function sendDevotionReminders() {
       .get();
       
     if (devotionSnap.empty) {
-      console.log("No devotions found for today or tomorrow.");
+      console.log("No devotions found for tomorrow.");
       return;
     }
 
     const devotions = devotionSnap.docs.map(doc => doc.data() as DevotionDaily);
-    
-    const usersSnap = await db.collection("users").get();
-    const userMap: Record<string, { email: string; name: string }> = {};
-    usersSnap.docs.forEach(doc => {
-      const data = doc.data();
-      if (data.email) {
-        userMap[doc.id] = { email: data.email, name: data.name };
-      }
-    });
-
-    const resend = new Resend(process.env.RESEND_API_KEY as string);
 
     for (const devotion of devotions) {
+      // Alert only the assigned teacher (skipping backup teacher as requested)
       if (!devotion.assigned_to) continue;
-      
-      const user = userMap[devotion.assigned_to];
-      if (!user) continue;
 
-      const dayLabel = "Tomorrow";
-      const topicStr = devotion.topic ? `Topic: ${devotion.topic}` : "Topic: (Not set yet)";
+      const topicStr = devotion.topic ? `Topic: ${devotion.topic}` : "Topic not set yet";
 
-      const html = `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-          <h2>Imprint Workforce: Devotion Reminder</h2>
-          <p>Hello ${user.name},</p>
-          <p>This is a reminder that you are scheduled to lead the Daily Devotion <strong>${dayLabel} (${devotion.date})</strong>.</p>
-          <p><strong>${topicStr}</strong></p>
-          ${!devotion.teaching_notes ? '<p style="color: #d97706;">Friendly reminder: Please add your teaching notes in the dashboard.</p>' : ''}
-          <br/>
-          <p>Blessings,<br/>The Imprint Team</p>
-        </div>
-      `;
-
-      try {
-        await resend.emails.send({
-          from: "Imprint Workforce <no-reply@zubby.me>", 
-          to: user.email,
-          subject: `Reminder: You are leading devotion ${dayLabel}`,
-          html,
-        });
-      } catch (err) {
-        console.error("Failed to send email to", user.email, err);
-      }
+      await sendPushNotification({
+        uids: [devotion.assigned_to],
+        title: "Devotion Tomorrow",
+        body: `You are leading devotion tomorrow (${devotion.date}). ${topicStr}`,
+        url: "/dashboard/devotion",
+      });
     }
+    console.log(`[CRON] Devotion reminders pushed for ${devotions.length} schedule(s).`);
   } catch (error) {
     console.error("Cron Error (Devotion):", error);
   }
 }
 
 export async function sendRosterReminders() {
-  console.log("[CRON] Running Roster Reminders");
+  console.log("[CRON] Running Roster Reminders via Web Push");
   try {
     const db = getAdminDb();
     // This function only runs on Saturday (guarded in route.ts),
     // so tomorrow (+1 day) is always the upcoming Sunday.
-    // We must NOT use getTargetSundayString() here because that returns
-    // the *previous* Sunday (start of the current week), which is wrong.
     const targetSunday = getISODateOffset(1);
     console.log(`[CRON] Roster target Sunday: ${targetSunday}`);
     
@@ -203,47 +135,21 @@ export async function sendRosterReminders() {
     }
 
     const assignments = rosterSnap.docs.map(doc => doc.data() as Roster);
-    
-    const usersSnap = await db.collection("users").get();
-    const userMap: Record<string, { email: string; name: string }> = {};
-    usersSnap.docs.forEach(doc => {
-      const data = doc.data();
-      if (data.email) {
-        userMap[doc.id] = { email: data.email, name: data.name };
-      }
-    });
-
-    const resend = new Resend(process.env.RESEND_API_KEY as string);
 
     for (const assignment of assignments) {
-      const user = userMap[assignment.assigned_to];
-      if (!user) continue;
+      if (!assignment.assigned_to) continue;
 
       const dutyLabel = ROSTER_DUTY_LABELS[assignment.duty] || assignment.duty;
       const dateLabel = formatTargetSunday(targetSunday);
-      
-      const html = `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-          <h2>Imprint Workforce: Roster Reminder</h2>
-          <p>Hello ${user.name},</p>
-          <p>This is a reminder that you are scheduled for <strong>${dutyLabel}</strong> for the upcoming service on <strong>${dateLabel}</strong>.</p>
-          <p>Please log in to the dashboard if you need more details.</p>
-          <br/>
-          <p>Blessings,<br/>The Imprint Team</p>
-        </div>
-      `;
 
-      try {
-        await resend.emails.send({
-          from: "Imprint Workforce <no-reply@zubby.me>", 
-          to: user.email,
-          subject: `Reminder: You are assigned for ${dutyLabel} on ${dateLabel}`,
-          html,
-        });
-      } catch (err) {
-        console.error("Failed to send email to", user.email, err);
-      }
+      await sendPushNotification({
+        uids: [assignment.assigned_to],
+        title: "Sunday Duty Reminder",
+        body: `Reminder: You are scheduled for ${dutyLabel} for service tomorrow (${dateLabel}).`,
+        url: "/dashboard/roster",
+      });
     }
+    console.log(`[CRON] Sunday roster reminders pushed for ${assignments.length} duty assignment(s).`);
   } catch (error) {
     console.error("Cron Error (Roster):", error);
   }

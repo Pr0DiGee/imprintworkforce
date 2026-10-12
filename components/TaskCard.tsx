@@ -7,6 +7,7 @@ import { Task, TaskStatus } from "@/types";
 import { toast } from "sonner";
 import { Avatar } from "@/components/Avatar";
 import { Trash2 } from "lucide-react";
+import { triggerPushNotification } from "@/lib/client-notifications";
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
   ASSIGNED: "Assigned",
@@ -50,6 +51,16 @@ export function TaskCard({
       await updateDoc(doc(db, "tasks", task.id), { status: next });
       setStatus(next);
       toast.success(`Task marked as ${STATUS_LABELS[next]}`);
+
+      if (next === "COMPLETED" && task.assigned_by) {
+        triggerPushNotification({
+          uids: [task.assigned_by],
+          title: "Task Completed",
+          body: `${assigneeName} completed "${task.description}"`,
+          url: "/dashboard/tasks",
+        });
+      }
+
       onUpdate?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update status.");

@@ -10,6 +10,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { ToolbarBtn } from "@/components/ToolbarBtn";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { triggerPushNotification } from "@/lib/client-notifications";
 
 // ─── Inline Editor ─────────────────────────────────────────────────────────────
 
@@ -187,6 +188,16 @@ export function DevotionClient({
         ...newObj,
         updated_at: serverTimestamp(),
       }, { merge: true });
+
+      // If assigned_to changed to someone else, alert the newly assigned teacher
+      if (updates.assigned_to && updates.assigned_to !== existing.assigned_to && updates.assigned_to !== user.uid) {
+        triggerPushNotification({
+          uids: [updates.assigned_to],
+          title: "Devotion Schedule",
+          body: `You are scheduled to lead devotion on ${date}`,
+          url: "/dashboard/devotion",
+        });
+      }
     } catch (err) {
       toast.error("Failed to update devotion data");
     } finally {
@@ -197,6 +208,18 @@ export function DevotionClient({
   const handleNotesSave = async (date: string, notes: string) => {
     await handleDayUpdate(date, { teaching_notes: notes });
     toast.success("Teaching notes saved");
+
+    // If edited by someone other than the assigned teacher, alert the assigned teacher
+    const currentTeacher = devotions[date]?.assigned_to;
+    if (currentTeacher && currentTeacher !== user.uid) {
+      triggerPushNotification({
+        uids: [currentTeacher],
+        title: "Devotion Notes Updated",
+        body: `Teaching notes for devotion on ${date} have been updated`,
+        url: "/dashboard/devotion",
+      });
+    }
+
     setExpandedDate(null);
   };
 

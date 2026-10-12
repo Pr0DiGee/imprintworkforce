@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
     "googleapis-common",
     "jose",
     "jwks-rsa",
+    "web-push",
   ],
 };
 

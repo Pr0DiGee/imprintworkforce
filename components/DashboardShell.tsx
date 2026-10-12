@@ -8,6 +8,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, CheckSquare, FileText, UserCheck } from "lucide-react";
 
+import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
+
 function MobileNavItem({ href, icon: Icon, label }: { href: string; icon: any; label: string }) {
   const pathname = usePathname();
   const active = href === "/dashboard" ? pathname === href : pathname.startsWith(href);
@@ -125,6 +127,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Main content ────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto p-4 md:p-6 md:ml-56 mt-14 md:mt-0 mb-16 md:mb-0">
+        <NotificationPermissionBanner />
         {children}
       </main>
 
