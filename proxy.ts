@@ -16,7 +16,12 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname === "/" ||
-    pathname === "/logo.png"
+    pathname === "/logo.png" ||
+    pathname === "/manifest.json" ||
+    pathname === "/sw.js" ||
+    pathname.endsWith(".png") ||
+    pathname.endsWith(".ico") ||
+    pathname.endsWith(".json")
   ) {
     return NextResponse.next();
   }
@@ -41,7 +46,10 @@ export const config = {
      * - _next/image (image optimization)
      * - favicon.ico
      * - logo.png
+     * - manifest.json
+     * - sw.js
+     * - icon files and image assets (.png, .svg, etc.)
      */
-    "/((?!_next/static|_next/image|favicon.ico|logo.png).*)",
+    "/((?!_next/static|_next/image|favicon.ico|logo.png|manifest\\.json|sw\\.js|.*\\.png$).*)",
   ],
 };
