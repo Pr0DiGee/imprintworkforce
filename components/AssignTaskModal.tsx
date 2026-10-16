@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase/client";
 import { UserProfile } from "@/types";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/Skeleton";
-import { triggerPushNotification } from "@/lib/client-notifications";
+import { notifyEvent } from "@/lib/client-notifications";
 
 interface AssignTaskModalProps {
   assignedByUid: string;
@@ -50,7 +50,7 @@ export function AssignTaskModal({
       const deadlineDate = new Date(deadline);
       deadlineDate.setHours(23, 59, 59, 0);
 
-      await addDoc(collection(db, "tasks"), {
+      const taskRef = await addDoc(collection(db, "tasks"), {
         assigned_to: assignedTo,
         assigned_by: assignedByUid,
         description: description.trim(),
@@ -59,12 +59,7 @@ export function AssignTaskModal({
         created_at: serverTimestamp(),
       });
 
-      triggerPushNotification({
-        uids: [assignedTo],
-        title: "New Task Assigned",
-        body: `"${description.trim()}" (Due: ${deadlineDate.toLocaleDateString()})`,
-        url: "/dashboard/tasks",
-      });
+      notifyEvent({ type: "TASK_ASSIGNED", taskId: taskRef.id });
 
       toast.success("Task assigned successfully");
       onAssigned();
