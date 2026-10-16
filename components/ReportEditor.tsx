@@ -148,85 +148,29 @@ export function ReportEditor({
     window.print();
   }
 
-  async function handleForwardEmail(toEmail: string, label: string) {
-    if (!pageRef.current) return;
-    setSendingEmailTo(toEmail);
+  async function handleForwardEmail(to: "CHURCH" | "LEAD_PASTOR", label: string) {
+    if (!editor) return;
+    setSendingEmailTo(to);
     try {
-      const subject = `Weekly Report - ${defaultDepartmentName} - ${targetSunday}`;
-      const reportHtml = editor?.getHTML() || "";
-      const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-
-      const emailHtml = `
-        <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto; color: #333;">
-          <h1 style="text-align: center; color: #111827;">${headerPrefix} Report</h1>
-          <h2 style="text-align: center; color: #374151; margin-top: 4px;">${reportTitle}</h2>
-          <p style="text-align: center; color: #6b7280; font-style: italic;">Date: ${dateStr}</p>
-          <hr style="border: none; height: 2px; background-color: #b91c1c; margin: 2rem 0;" />
-          <div style="margin-top: 20px;">
-            ${reportHtml}
-          </div>
-        </div>
-      `;
-      
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: toEmail,
-          subject,
-          html: emailHtml
+          to,
+          department,
+          targetSunday,
+          headerPrefix,
+          reportTitle,
+          reportHtml: editor.getHTML(),
         }),
       });
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message || "Failed to send email");
+        throw new Error(errorData?.error || "Failed to send email");
       }
-      
+
       toast.success(`Report forwarded to ${label}!`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "An error occurred while emailing.");
-    } finally {
-      setSendingEmailTo(null);
-    }
-  }
-
-  async function handleTestEmail() {
-    if (!pageRef.current) return;
-    setSendingEmailTo("test");
-    try {
-      const subject = `[TEST] Weekly Report - ${defaultDepartmentName} - ${targetSunday}`;
-      const reportHtml = editor?.getHTML() || "";
-      const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-
-      const emailHtml = `
-        <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto; color: #333;">
-          <h1 style="text-align: center; color: #111827;">${headerPrefix} Report [TEST]</h1>
-          <h2 style="text-align: center; color: #374151; margin-top: 4px;">${reportTitle}</h2>
-          <p style="text-align: center; color: #6b7280; font-style: italic;">Date: ${dateStr}</p>
-          <hr style="border: none; height: 2px; background-color: #b91c1c; margin: 2rem 0;" />
-          <div style="margin-top: 20px;">
-            ${reportHtml}
-          </div>
-        </div>
-      `;
-      
-      const res = await fetch("/api/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: "DEVELOPER_EMAIL",
-          subject,
-          html: emailHtml
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message || "Failed to send test email");
-      }
-      
-      toast.success("Test report forwarded to your email!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "An error occurred while emailing.");
     } finally {
@@ -321,22 +265,22 @@ export function ReportEditor({
           {!hideForwardButton && (
             <>
               <button
-                onClick={() => handleForwardEmail("CHURCH_EMAIL", "Church Email")}
-                disabled={sendingEmailTo === "CHURCH_EMAIL"}
+                onClick={() => handleForwardEmail("CHURCH", "Church Email")}
+                disabled={sendingEmailTo === "CHURCH"}
                 className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
                 style={{ background: "var(--accent)" }}
               >
                 <Send size={16} />
-                {sendingEmailTo === "CHURCH_EMAIL" ? "Sending..." : "Church Email"}
+                {sendingEmailTo === "CHURCH" ? "Sending..." : "Church Email"}
               </button>
               <button
-                onClick={() => handleForwardEmail("LEAD_PASTOR_EMAIL", "Lead Pastor")}
-                disabled={sendingEmailTo === "LEAD_PASTOR_EMAIL"}
+                onClick={() => handleForwardEmail("LEAD_PASTOR", "Lead Pastor")}
+                disabled={sendingEmailTo === "LEAD_PASTOR"}
                 className="flex justify-center items-center gap-2 px-3 py-1.5 text-sm font-medium text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
                 style={{ background: "var(--accent)" }}
               >
                 <Send size={16} />
-                {sendingEmailTo === "LEAD_PASTOR_EMAIL" ? "Sending..." : "Lead Pastor"}
+                {sendingEmailTo === "LEAD_PASTOR" ? "Sending..." : "Lead Pastor"}
               </button>
             </>
           )}
