@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sendTaskReminders, sendDevotionReminders, sendRosterReminders } from "@/lib/server-crons";
+import { sendTaskReminders, sendDevotionReminders, sendRosterReminders, cleanupExpiredRateLimits } from "@/lib/server-crons";
 
 export async function GET(req: Request) {
   try {
@@ -12,6 +12,9 @@ export async function GET(req: Request) {
     
     // 1. Task Reminders run EVERY DAY
     await sendTaskReminders();
+
+    // Housekeeping: old check-in rate-limit records
+    await cleanupExpiredRateLimits();
 
     // Vercel crons run in UTC. We need to evaluate the day in Nigerian time (UTC+1).
     // An easy way is to use toLocaleString with the timeZone option.

@@ -154,3 +154,33 @@ export async function sendRosterReminders() {
     console.error("Cron Error (Roster):", error);
   }
 }
+
+/**
+ * Delete check-in rate-limit records whose window has passed (expires_at is
+ * 24h after creation). Stands in for a Firestore TTL policy, which needs
+ * billing enabled and can't be set up until the collection exists.
+ */
+export async function cleanupExpiredRateLimits(): Promise<number> {
+  const db = getAdminDb();
+  let total = 0;
+  try {
+    // Delete in pages so a large backlog can't exceed batch limits
+    for (;;) {
+      const snap = await db
+        .collection("checkin_rate_limits")
+        .where("expires_at", "<", new Date())
+        .limit(400)
+        .get();
+      if (snap.empty) break;
+      const batch = db.batch();
+      snap.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      total += snap.size;
+      if (snap.size < 400) break;
+    }
+    console.log(`[CRON] Removed ${total} expired check-in rate-limit record(s).`);
+  } catch (error) {
+    console.error("Cron Error (rate-limit cleanup):", error);
+  }
+  return total;
+}
