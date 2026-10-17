@@ -64,8 +64,6 @@ export async function PATCH(req: NextRequest) {
     await db.collection("users").doc(uid).update({
       role,
       departments: departments || [],
-      // Sync the legacy field for backwards compatibility
-      department: departments && departments.length > 0 ? departments[0] : "",
     });
 
     return NextResponse.json({ success: true });

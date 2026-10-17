@@ -40,7 +40,7 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
   function startEdit(user: UserProfile) {
     setEditingUid(user.uid);
     setEditRole(user.role);
-    setEditDepts(user.departments || (user.department ? [user.department as Department] : []));
+    setEditDepts(user.departments || []);
   }
 
   function cancelEdit() {
@@ -155,7 +155,7 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
               {users.map((user) => {
                 const isEditing = editingUid === user.uid;
                 const isSelf = user.uid === currentUser?.uid;
-                const userDepts = user.departments || (user.department ? [user.department as Department] : []);
+                const userDepts = user.departments || [];
 
                 return (
                   <tr

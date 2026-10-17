@@ -45,7 +45,6 @@ export function RosterClient({
 
   const rosterUsers = users.filter(u => 
     !(u.departments || []).includes("DEVOTION") && 
-    u.department !== "DEVOTION" && 
     u.role !== "ADMIN" && 
     u.role !== "SYSTEM_ADMIN"
   );

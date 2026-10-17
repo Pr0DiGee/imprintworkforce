@@ -63,8 +63,6 @@ export interface UserProfile {
   role: AppRole;
   /** Array of departments the user belongs to */
   departments: Department[];
-  /** @deprecated Use `departments` array instead. Kept for migration compatibility. */
-  department?: Department | "";
   /** Profile picture URL */
   photo_url?: string;
 }

@@ -2,13 +2,9 @@
 
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import Link from "next/link";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -144,139 +140,9 @@ function LoginForm() {
   );
 }
 
-function SignUpForm() {
-  const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const credential = await createUserWithEmailAndPassword(auth, email, password);
-      const { uid } = credential.user;
-
-      try {
-        await setDoc(doc(db, "users", uid), {
-          uid,
-          name: name.trim(),
-          email: email.toLowerCase().trim(),
-          role: "WORKER",
-          departments: [],
-          created_at: serverTimestamp(),
-        });
-      } catch (firestoreErr: unknown) {
-        console.error("[SignUp] Firestore profile write failed:", firestoreErr);
-        setError(getErrorMessage(firestoreErr));
-        setLoading(false);
-        return;
-      }
-
-      const idToken = await credential.user.getIdToken();
-      await createSession(idToken);
-
-      router.push("/dashboard");
-      router.refresh();
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
-      setLoading(false);
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="signup-name" className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-primary)" }}>
-          Full Name
-        </label>
-        <input
-          id="signup-name"
-          type="text"
-          required
-          autoComplete="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full px-4 py-2.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
-          style={{
-            background: "var(--bg-input)",
-            border: "1px solid var(--border-primary)",
-            color: "var(--text-primary)",
-          }}
-          placeholder="John Doe"
-        />
-      </div>
-      <div>
-        <label htmlFor="signup-email" className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-primary)" }}>
-          Email
-        </label>
-        <input
-          id="signup-email"
-          type="email"
-          required
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-2.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
-          style={{
-            background: "var(--bg-input)",
-            border: "1px solid var(--border-primary)",
-            color: "var(--text-primary)",
-          }}
-          placeholder="you@example.com"
-        />
-      </div>
-      <div>
-        <label htmlFor="signup-password" className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-primary)" }}>
-          Password
-        </label>
-        <input
-          id="signup-password"
-          type="password"
-          required
-          autoComplete="new-password"
-          minLength={6}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-2.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
-          style={{
-            background: "var(--bg-input)",
-            border: "1px solid var(--border-primary)",
-            color: "var(--text-primary)",
-          }}
-          placeholder="At least 6 characters"
-        />
-      </div>
-
-      {error && (
-        <p role="alert" className="text-sm px-4 py-3 rounded-lg" style={{ background: "var(--danger-subtle)", color: "var(--danger)", border: "1px solid var(--danger)" }}>
-          {error}
-        </p>
-      )}
-
-      <button
-        id="signup-submit"
-        type="submit"
-        disabled={loading}
-        className="w-full py-2.5 px-4 text-white font-medium rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 disabled:opacity-70 mt-2"
-        style={{ background: "var(--accent)" }}
-      >
-        {loading ? "Creating account…" : "Create Account"}
-      </button>
-    </form>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-type Tab = "login" | "signup";
-
 export default function LoginPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("login");
-
   // Allow setting light/dark mode explicitly for the split screen design
   const [isDark, setIsDark] = useState(false);
   useEffect(() => {
@@ -333,53 +199,12 @@ export default function LoginPage() {
               boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
             }}
           >
-            {/* Tabs */}
-            <div role="tablist" className="flex relative" style={{ borderBottom: "1px solid var(--border-primary)" }}>
-              <button
-                id="tab-login"
-                role="tab"
-                aria-selected={activeTab === "login"}
-                aria-controls="panel-login"
-                onClick={() => setActiveTab("login")}
-                className="flex-1 py-4 text-sm font-semibold transition-colors focus:outline-none z-10"
-                style={{
-                  color: activeTab === "login" ? "var(--text-primary)" : "var(--text-muted)",
-                }}
-              >
-                Sign In
-              </button>
-              <button
-                id="tab-signup"
-                role="tab"
-                aria-selected={activeTab === "signup"}
-                aria-controls="panel-signup"
-                onClick={() => setActiveTab("signup")}
-                className="flex-1 py-4 text-sm font-semibold transition-colors focus:outline-none z-10"
-                style={{
-                  color: activeTab === "signup" ? "var(--text-primary)" : "var(--text-muted)",
-                }}
-              >
-                Create Account
-              </button>
-              {/* Tab indicator */}
-              <div 
-                className="absolute bottom-0 h-0.5 transition-all duration-300 ease-in-out" 
-                style={{ 
-                  background: "var(--accent)", 
-                  width: "50%", 
-                  left: activeTab === "login" ? "0" : "50%" 
-                }} 
-              />
-            </div>
-
-            {/* Form area */}
-            <div 
-              id={activeTab === "login" ? "panel-login" : "panel-signup"} 
-              role="tabpanel" 
-              aria-labelledby={activeTab === "login" ? "tab-login" : "tab-signup"}
-              className="p-8"
-            >
-              {activeTab === "login" ? <LoginForm /> : <SignUpForm />}
+            <div className="p-8">
+              <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>Sign in</h2>
+              <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
+                Accounts are created by your administrator.
+              </p>
+              <LoginForm />
             </div>
           </div>
 
