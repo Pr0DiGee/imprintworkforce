@@ -50,8 +50,14 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to delete user");
       }
+      const { cleanup } = await res.json();
       setUsers(users.filter(u => u.uid !== deletingUid));
-      toast.success("User deleted successfully");
+      const parts = [
+        cleanup?.tasksDeleted && `${cleanup.tasksDeleted} task(s) deleted`,
+        (cleanup?.rosterUnassigned || cleanup?.devotionsUnassigned) &&
+          `${(cleanup.rosterUnassigned ?? 0) + (cleanup.devotionsUnassigned ?? 0)} duty slot(s) now unassigned`,
+      ].filter(Boolean);
+      toast.success(parts.length ? `User deleted · ${parts.join(" · ")}` : "User deleted");
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -309,7 +315,7 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
       <ConfirmDialog
         isOpen={deletingUid !== null}
         title="Delete User"
-        message="Are you sure you want to permanently delete this user? This action cannot be undone."
+        message="Permanently delete this user? Tasks assigned to them and their private notes are deleted, and their roster and devotion slots become unassigned. Reports, feedback and follow-up history are kept. This can't be undone."
         confirmLabel="Delete"
         isDestructive
         onConfirm={handleDeleteUser}

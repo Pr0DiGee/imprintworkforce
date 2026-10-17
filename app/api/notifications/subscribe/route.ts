@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { verifySession } from "@/app/api/auth/session/route";
+import { getServerUser } from "@/lib/server-auth";
 import { FieldValue } from "firebase-admin/firestore";
 
 export async function POST(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get("session")?.value;
-    if (!sessionCookie) {
+    const session = await getServerUser();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const session = verifySession(sessionCookie);
-    if (!session?.uid) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
     const body = await request.json();

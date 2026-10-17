@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerUser } from "@/lib/server-auth";
+import {
+  SESSION_COOKIE_NAME,
+  getServerUser,
+  sessionCookieOptions,
+  signSessionCookie,
+} from "@/lib/server-auth";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 
 export async function POST(req: NextRequest) {
@@ -57,9 +62,16 @@ export async function POST(req: NextRequest) {
 
     await auth.updateUser(user.uid, updatePayload);
 
-    // Sync email change to Firestore
+    // Sign out every other device: revoke Firebase refresh tokens, and reject
+    // session cookies issued before now (checked in getServerUser). This device
+    // gets a fresh cookie below and re-signs in to Firebase in ProfileForm.
+    await auth.revokeRefreshTokens(user.uid);
+    await db.collection("users").doc(user.uid).update({
+      sessions_valid_after: Math.floor(Date.now() / 1000),
+      ...(newEmail ? { email: newEmail } : {}),
+    });
+
     if (newEmail) {
-      await db.collection("users").doc(user.uid).update({ email: newEmail });
 
       // Send confirmation email to the new address
       try {
@@ -103,10 +115,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ 
+    const response = NextResponse.json({
       success: true,
-      message: newEmail ? "Email updated successfully." : "Password updated successfully.",
+      message: newEmail
+        ? "Email updated. You've been signed out on your other devices."
+        : "Password updated. You've been signed out on your other devices.",
     });
+    response.cookies.set(SESSION_COOKIE_NAME, signSessionCookie(user.uid), sessionCookieOptions());
+    return response;
   } catch (error: any) {
     console.error("[POST /api/auth/update-credentials]", error);
 

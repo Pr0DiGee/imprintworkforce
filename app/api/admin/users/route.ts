@@ -3,6 +3,7 @@ import { getServerUser } from "@/lib/server-auth";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { can } from "@/lib/permissions";
+import { deleteWhere, updateWhere } from "@/lib/server-cleanup";
 import { APP_ROLES, DEPARTMENTS, type AppRole, type Department } from "@/types";
 
 const validRole = (role: unknown): role is AppRole => APP_ROLES.includes(role as AppRole);
@@ -120,12 +121,25 @@ export async function DELETE(req: NextRequest) {
     const auth = getAdminAuth();
     const db = getAdminDb();
 
-    // Delete from Auth
-    await auth.deleteUser(uid);
-    // Delete from Firestore
+    // Clean up first, so a failure part-way leaves the user in place to retry.
+    // Kept: reports, feedback and follow-up logs (church records), and tasks
+    // this user assigned to others.
+    const cleanup = {
+      tasksDeleted: await deleteWhere(db.collection("tasks").where("assigned_to", "==", uid)),
+      rosterUnassigned: await updateWhere(db.collection("roster").where("assigned_to", "==", uid), { assigned_to: "" }),
+      devotionsUnassigned: await updateWhere(db.collection("devotion").where("assigned_to", "==", uid), { assigned_to: "" }),
+      backupTeacherRemoved: await updateWhere(db.collection("devotion").where("backup_teacher", "==", uid), { backup_teacher: "" }),
+      notesDeleted: await deleteWhere(db.collection("notes").where("user_id", "==", uid)),
+      noteFoldersDeleted: await deleteWhere(db.collection("note_folders").where("user_id", "==", uid)),
+      pushSubscriptionsDeleted: await deleteWhere(db.collection("push_subscriptions").where("uid", "==", uid)),
+    };
+
+    await auth.deleteUser(uid).catch((err) => {
+      if (err?.code !== "auth/user-not-found") throw err; // already gone: still remove the profile
+    });
     await db.collection('users').doc(uid).delete();
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, cleanup });
   } catch (error: any) {
     console.error('[DELETE /api/admin/users]', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });

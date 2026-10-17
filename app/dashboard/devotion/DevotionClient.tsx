@@ -164,8 +164,9 @@ export function DevotionClient({
     setExpandedDate(null);
   };
 
-  const handleDayUpdate = async (date: string, updates: Partial<DevotionDaily>) => {
-    if (!hasPermission) return;
+  /** Saves a day's changes; returns false (and restores the old values) if the save failed. */
+  const handleDayUpdate = async (date: string, updates: Partial<DevotionDaily>): Promise<boolean> => {
+    if (!hasPermission) return false;
     
     const existing = devotions[date] || {
       date,
@@ -181,12 +182,19 @@ export function DevotionClient({
       last_edited_by: user.uid
     };
 
+    const previous = devotions[date];
     setDevotions(prev => ({ ...prev, [date]: newObj }));
 
     setSavingState(prev => ({ ...prev, [date]: true }));
     try {
+      // Write only the editable fields (dates in local state are display strings)
       await setDoc(doc(db, "devotion", date), {
-        ...newObj,
+        date,
+        assigned_to: newObj.assigned_to ?? "",
+        backup_teacher: newObj.backup_teacher ?? "",
+        topic: newObj.topic ?? "",
+        teaching_notes: newObj.teaching_notes ?? "",
+        last_edited_by: user.uid,
         updated_at: serverTimestamp(),
       }, { merge: true });
 
@@ -194,15 +202,24 @@ export function DevotionClient({
       if (updates.assigned_to && updates.assigned_to !== existing.assigned_to && updates.assigned_to !== user.uid) {
         notifyEvent({ type: "DEVOTION_ASSIGNED", date });
       }
-    } catch (err) {
-      toast.error("Failed to update devotion data");
+      return true;
+    } catch {
+      setDevotions(prev => {
+        const next = { ...prev };
+        if (previous) next[date] = previous;
+        else delete next[date];
+        return next;
+      });
+      toast.error("Couldn't save devotion changes. Please try again.");
+      return false;
     } finally {
       setSavingState(prev => ({ ...prev, [date]: false }));
     }
   };
 
   const handleNotesSave = async (date: string, notes: string) => {
-    await handleDayUpdate(date, { teaching_notes: notes });
+    const saved = await handleDayUpdate(date, { teaching_notes: notes });
+    if (!saved) return; // keep the editor open so nothing typed is lost
     toast.success("Teaching notes saved");
 
     // If edited by someone other than the assigned teacher, alert the assigned teacher

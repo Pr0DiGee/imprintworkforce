@@ -18,10 +18,11 @@ import {
  * This reflects the "current service window" — from Sunday through the
  * following Saturday, the target Sunday is the start of that window.
  */
-export function getTargetSundayString(): string {
-  const now = new Date();
-  // startOfWeek with weekStartsOn: 0 gives us Sunday
-  const sunday = startOfWeek(now, { weekStartsOn: 0 });
+export function getTargetSundayString(now: Date = new Date()): string {
+  // Use the church's date (Lagos), not the server's: Vercel runs in UTC, which
+  // is still Saturday during the first hour of Sunday in Lagos.
+  const { date } = getLagosToday(now);
+  const sunday = startOfWeek(parseISO(date), { weekStartsOn: 0 });
   return format(sunday, "yyyy-MM-dd");
 }
 

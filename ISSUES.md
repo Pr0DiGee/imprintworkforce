@@ -31,16 +31,20 @@ Suggested order: A (security) → 8 → 9–11 → C (speed) → the rest.
 - [x] **13. Role lists disagree** between `lib/roles.ts`, `firestore.rules`, `SidebarNav`, devotion page, follow-up page (ADMIN / SYSTEM_ADMIN handling). *(Fixed: lib/permissions.ts is the single source; rules generated from it; ADMIN super-user; all pastors see all tasks; only Lead Pastor/Admin write any report; Devotion department edits the schedule; DEVOTION_LEAD and SYSTEM_ADMIN removed)*
   Fix: single source of truth, mirrored in rules.
 - [x] **33. Admins see no tasks.** Server treats ADMIN as a pastor (shows tasks they assigned) while the page/reload treat them as a worker; confirmed on dev. Part of #13. *(Fixed by #13)*
-- [ ] **14. Devotion notes toast "saved" even when the save failed.**
+- [x] **14. Devotion notes toast "saved" even when the save failed.** *(Fixed: only says saved when it saved; reverts and keeps the editor open on failure)*
 - [x] **15. Duplicate check-ins on the same Sunday inflate `attendance_count`.** *(Fixed: one attendance record per member per Sunday)*
   Fix: one attendance doc per member per Sunday (`{memberId}_{sunday}`).
-- [ ] **16. Deletes leave orphans** — contact delete leaves follow-up logs; user delete leaves tasks/roster/contacts showing "Unknown".
-- [ ] **17. Push subscription stays bound to the previous user after sign-out on a shared device.**
+- [x] **16. Deletes leave orphans** — contact delete leaves follow-up logs; user delete leaves tasks/roster/contacts showing "Unknown". *(Fixed: deleting a contact deletes all its follow-up logs (server-side). Deleting a user: tasks assigned to them and private notes deleted, roster/devotion slots unassigned; reports, feedback and follow-up history kept)*
+- [x] **17. Deleting a user leaves their duties and tasks behind.** *(Fixed together with #16: tasks assigned to them deleted, roster/devotion slots unassigned)*
 - [x] **30. iPhone pushes failed when running locally.** The local `.env.local` had `VAPID_SUBJECT=mailto:pastorboye@imprint.local`; Apple rejects non-real domains (403 BadJwtToken). Live was unaffected: Vercel already uses a real Gmail address. *(Fixed locally and in the code's fallback.)*
-- [ ] **18. Small ones:** dashboard report total hard-coded to 5; target Sunday computed in UTC not Lagos time (first hour of Sunday is "last week"); password change doesn't invalidate other sessions; `GET /api/auth/session` returns 500 on a malformed cookie.
+- [x] **18. Small ones:** dashboard report total hard-coded to 5; target Sunday computed in UTC not Lagos time (first hour of Sunday is "last week"); password change doesn't invalidate other sessions; `GET /api/auth/session` returns 500 on a malformed cookie. *(Fixed: report total uses DEPARTMENTS; target Sunday uses Lagos time; password/email change signs out other devices; malformed cookie → 401; one copy of session code in lib/server-auth.ts)*
 
 - [x] **31. Attendance visitor labels ignored the real visit count** (`attendance_count` wasn't passed to the page, so labels guessed from the sign-up date). *(Fixed.)*
 - [ ] **32. Clean up `checkin_rate_limits`.** Old rate-limit windows pile up; enable a Firestore TTL policy on `expires_at` for that collection (Firebase console → Firestore → TTL).
+
+- [ ] **34. Devotion topic saves on every keystroke** (one database write per letter typed). Debounce it like notes autosave.
+- [ ] **35. Follow-up contacts of a deleted user keep pointing at them** ("Unknown Worker"). Decide: reassign, or leave for pastors to reassign.
+- [ ] **36. Signing out doesn't stop push notifications on that device.** The device's push subscription stays linked to the user until someone else signs in there.
 
 ## C. Speed
 

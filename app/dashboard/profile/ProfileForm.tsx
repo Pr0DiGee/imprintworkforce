@@ -5,6 +5,8 @@ import { UserProfile, DEPARTMENT_LABELS, ROLE_LABELS } from "@/types";
 import { updateProfile } from "./actions";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/context/AuthContext";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
 
 export function ProfileForm({ user }: { user: UserProfile }) {
   const { refreshProfile } = useAuth();
@@ -92,6 +94,18 @@ export function ProfileForm({ user }: { user: UserProfile }) {
       if (!res.ok) {
         setSecError(data.error || "Failed to update.");
         return;
+      }
+
+      // The change signed out every device's Firebase session, including this one.
+      // Sign back in here with the new credentials so the app keeps working.
+      try {
+        await signInWithEmailAndPassword(
+          auth,
+          secMode === "email" ? secNewEmail : user.email,
+          secMode === "password" ? secNewPassword : secCurrentPassword
+        );
+      } catch (signInErr) {
+        console.warn("[Profile] Re-sign-in after credential change failed:", signInErr);
       }
 
       setSecSuccess(data.message);

@@ -42,7 +42,7 @@ Root-level `fix_profile.js`, `update_profile.js`, `scratch_script.js` are leftov
 3. Server Components / routes call `getServerUser()` (`lib/server-auth.ts`), which verifies the cookie and loads `users/{uid}` via the Admin SDK. Every dashboard `page.tsx` does `const user = await getServerUser(); if (!user) redirect("/login")` and then does its own role check.
 4. Client-side, `context/AuthContext.tsx` (`useAuth()`) tracks the Firebase user and the Firestore profile; it re-fetches the profile every 5 minutes to pick up role changes.
 
-`verifySession` is duplicated in `app/api/auth/session/route.ts` (imported by the notifications routes) and as `verifySessionCookie` in `lib/server-auth.ts` — keep them in sync or consolidate.
+All session code lives in `lib/server-auth.ts` (sign, verify, cookie options, `getServerUser`). Changing a password or email sets `users/{uid}.sessions_valid_after` (seconds) and revokes Firebase refresh tokens, which signs out every other device; the changing device gets a fresh cookie and re-signs in to Firebase in `ProfileForm`.
 
 ### Data flow: server reads, client writes
 - **Reads**: dashboard `page.tsx` Server Components fetch with the Admin SDK (helpers in `lib/server-data.ts`, getters in `lib/firebase/admin.ts`), pass the data as props to a sibling `*Client.tsx` component. Dates in the browser are ISO strings: run every Firestore document through `serializeData()` (`lib/serialize.ts`) before it reaches component state, including client-side reloads, and read dates with `toJsDate()` from `lib/date.ts` (it accepts every shape and never returns an Invalid Date). Don't put `serverTimestamp()` sentinels in local state; use `new Date().toISOString()`.
@@ -57,8 +57,11 @@ Roles (`types/index.ts`): `WORKER`, `PASTOR`, `LEAD_PASTOR`, `ADMIN` (super-user
 
 Reports lock 24 hours after submission for everyone, admins included (`reportLocked()` in the rules, `REPORT_EDIT_WINDOW_MS` in `ReportsClient.tsx`). The admin catch-all rule deliberately skips the `reports` collection.
 
+### Deletes
+Deleting a user (`DELETE /api/admin/users`) deletes tasks assigned to them, their notes and push subscriptions, and clears their roster/devotion slots, then the account. Deleting a follow-up contact goes through `app/dashboard/followup/actions.ts` and removes its logs too. Batch helpers: `lib/server-cleanup.ts`.
+
 ### Week / date model
-Everything is keyed to a "target Sunday" (`YYYY-MM-DD`). `getTargetSundayString()` in `lib/date.ts` returns the most recent Sunday (Sun–Sat is one service week); the devotion week is the Mon–Sat after it. `lib/sunday.ts` only re-exports `lib/date.ts`.
+Everything is keyed to a "target Sunday" (`YYYY-MM-DD`). `getTargetSundayString()` in `lib/date.ts` returns the most recent Sunday in Lagos time (Sun–Sat is one service week); the devotion week is the Mon–Sat after it. `lib/sunday.ts` only re-exports `lib/date.ts`.
 
 Deterministic document IDs are relied on:
 - `reports/{DEPARTMENT}_{targetSunday}`

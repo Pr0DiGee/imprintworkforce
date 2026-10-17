@@ -4,7 +4,8 @@ import { useState, useMemo } from "react";
 import { UserProfile, FollowUpContact, FollowUpLog, FollowUpMethod } from "@/types";
 import { can } from "@/lib/permissions";
 import { format } from "date-fns";
-import { addDoc, collection, serverTimestamp, deleteDoc, doc } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { deleteFollowUpContact } from "./actions";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase/client";
 import { Phone, MessageSquare, MapPin, User, CheckCircle2, UserCheck, Search, Plus, Trash2 } from "lucide-react";
@@ -282,14 +283,13 @@ function ContactCard({
             {!readOnly && (
               <button 
                 onClick={async () => {
-                  if (confirm("Are you sure you want to delete this contact?")) {
-                    try {
-                      await deleteDoc(doc(db, "followup_contacts", contact.id!));
-                      toast.success("Contact deleted");
+                  if (confirm(`Delete ${contact.name} and all of their follow-up history? This can't be undone.`)) {
+                    const res = await deleteFollowUpContact(contact.id!);
+                    if ("error" in res) {
+                      toast.error(res.error);
+                    } else {
+                      toast.success("Contact and follow-up history deleted");
                       router.refresh();
-                    } catch (err) {
-                      console.error(err);
-                      toast.error("Failed to delete contact");
                     }
                   }
                 }}
