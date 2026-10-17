@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Dev only: lets a phone reach `next dev` through a Cloudflare quick tunnel
+  // (cloudflared tunnel --url http://localhost:3000) for real push testing.
+  allowedDevOrigins: ["*.trycloudflare.com"],
+
   // Exclude firebase-admin and its Google Cloud transitive dependencies from
   // Turbopack/webpack bundling. They rely on Node.js built-ins and optional
   // packages (e.g. @opentelemetry/api) that a bundler cannot resolve.
