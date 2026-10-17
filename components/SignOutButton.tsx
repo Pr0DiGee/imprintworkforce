@@ -5,6 +5,16 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useState } from "react";
 
+/** This device's push subscription endpoint, if any (gives up after 2s). */
+async function currentPushEndpoint(): Promise<string | null> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
+  const lookup = navigator.serviceWorker.ready
+    .then((reg) => reg.pushManager.getSubscription())
+    .then((sub) => sub?.endpoint ?? null);
+  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000));
+  return Promise.race([lookup, timeout]).catch(() => null);
+}
+
 export function SignOutButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -12,11 +22,20 @@ export function SignOutButton() {
   async function handleSignOut() {
     setLoading(true);
     try {
-      // 1. Sign out of Firebase Auth on the client
+      // 1. Stop this user's notifications going to this device (needs the session, so first)
+      const endpoint = await currentPushEndpoint();
+      if (endpoint) {
+        await fetch("/api/notifications/unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint }),
+        }).catch(() => {});
+      }
+      // 2. Sign out of Firebase Auth on the client
       await signOut(auth);
-      // 2. Clear the httpOnly session cookie on the server
+      // 3. Clear the httpOnly session cookie on the server
       await fetch("/api/auth/session", { method: "DELETE" });
-      // 3. Redirect to login
+      // 4. Redirect to login
       router.push("/login");
       router.refresh();
     } catch (err) {

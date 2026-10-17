@@ -1,19 +1,68 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { FollowUpContact, FollowUpLog } from "@/types";
 import { Search } from "lucide-react";
+import { reassignFollowUpContact } from "@/app/dashboard/followup/actions";
 
 interface GlobalFollowUpTableProps {
   contacts: FollowUpContact[];
   logs: FollowUpLog[];
   userMap: Record<string, string>;
   targetSunday: string;
+  /** Show a worker picker so pastors/admins can reassign contacts */
+  canReassign?: boolean;
+}
+
+/** Who a contact is assigned to; a picker for those allowed to reassign. */
+function AssigneeCell({ contact, userMap, canReassign }: { contact: FollowUpContact; userMap: Record<string, string>; canReassign: boolean }) {
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
+  const name = userMap[contact.assigned_to];
+  const orphaned = !name;
+
+  if (!canReassign) {
+    return <span style={{ color: orphaned ? "var(--danger)" : undefined }}>{name ?? "Unassigned"}</span>;
+  }
+
+  const workers = Object.entries(userMap).sort((a, b) => a[1].localeCompare(b[1]));
+  return (
+    <select
+      value={orphaned ? "" : contact.assigned_to}
+      disabled={saving}
+      aria-label={`Assign ${contact.name} to`}
+      onChange={async (e) => {
+        const newUid = e.target.value; // read before awaiting; the select re-renders
+        setSaving(true);
+        const res = await reassignFollowUpContact(contact.id!, newUid);
+        setSaving(false);
+        if ("error" in res) {
+          toast.error(res.error);
+        } else {
+          toast.success(`${contact.name} assigned to ${userMap[newUid]}`);
+          router.refresh();
+        }
+      }}
+      className="text-sm px-2 py-1 rounded-md max-w-[200px]"
+      style={{
+        background: "var(--bg-input)",
+        color: orphaned ? "var(--danger)" : "var(--text-primary)",
+        border: `1px solid ${orphaned ? "var(--danger)" : "var(--border-primary)"}`,
+      }}
+    >
+      {orphaned && <option value="" disabled>Unassigned: needs reassigning</option>}
+      {workers.map(([uid, workerName]) => (
+        <option key={uid} value={uid}>{workerName}</option>
+      ))}
+    </select>
+  );
 }
 
 import { formatRelativeCheckInDate } from "@/lib/date";
 
-export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: GlobalFollowUpTableProps) {
+export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday, canReassign = false }: GlobalFollowUpTableProps) {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -81,7 +130,7 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: G
                     <div className="text-xs" style={{ color: "var(--text-muted)" }}>{contact.phone}</div>
                   </td>
                   <td className="px-4 py-3" style={{ color: "var(--text-primary)" }}>
-                    {userMap[contact.assigned_to] || "Unknown"}
+                    <AssigneeCell contact={contact} userMap={userMap} canReassign={canReassign} />
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-xs font-medium px-2 py-1 rounded" style={{ background: "var(--bg-input)", color: "var(--text-secondary)" }}>
@@ -178,7 +227,9 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday }: G
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-[var(--text-secondary)]">Worker</div>
-                  <div className="text-sm font-medium text-[var(--text-primary)]">{userMap[contact.assigned_to] || "Unknown"}</div>
+                  <div className="text-sm font-medium text-[var(--text-primary)]">
+                    <AssigneeCell contact={contact} userMap={userMap} canReassign={canReassign} />
+                  </div>
                 </div>
               </div>
 

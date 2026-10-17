@@ -40,11 +40,11 @@ Suggested order: A (security) → 8 → 9–11 → C (speed) → the rest.
 - [x] **18. Small ones:** dashboard report total hard-coded to 5; target Sunday computed in UTC not Lagos time (first hour of Sunday is "last week"); password change doesn't invalidate other sessions; `GET /api/auth/session` returns 500 on a malformed cookie. *(Fixed: report total uses DEPARTMENTS; target Sunday uses Lagos time; password/email change signs out other devices; malformed cookie → 401; one copy of session code in lib/server-auth.ts)*
 
 - [x] **31. Attendance visitor labels ignored the real visit count** (`attendance_count` wasn't passed to the page, so labels guessed from the sign-up date). *(Fixed.)*
-- [ ] **32. Clean up `checkin_rate_limits`.** Old rate-limit windows pile up; enable a Firestore TTL policy on `expires_at` for that collection (Firebase console → Firestore → TTL).
+- [ ] **32. Clean up `checkin_rate_limits`.** Old rate-limit windows pile up; enable a Firestore TTL policy on `expires_at` for that collection (Firebase console → Firestore → TTL). *(Needs a TTL policy on checkin_rate_limits.expires_at in both projects. The app's service accounts lack permission to create it (403); do it in Google Cloud console → Firestore → TTL, or grant the role)*
 
-- [ ] **34. Devotion topic saves on every keystroke** (one database write per letter typed). Debounce it like notes autosave.
-- [ ] **35. Follow-up contacts of a deleted user keep pointing at them** ("Unknown Worker"). Decide: reassign, or leave for pastors to reassign.
-- [ ] **36. Signing out doesn't stop push notifications on that device.** The device's push subscription stays linked to the user until someone else signs in there.
+- [x] **34. Devotion topic saves on every keystroke** (one database write per letter typed). Debounce it like notes autosave. *(Fixed: saves once typing pauses (0.8s) or the box loses focus; 20 letters → 1 write)*
+- [x] **35. Follow-up contacts of a deleted user keep pointing at them** ("Unknown Worker"). Decide: reassign, or leave for pastors to reassign. *(Fixed: shown as "Unassigned: needs reassigning"; pastors/admins reassign from Follow-Up → Global List)*
+- [x] **36. Signing out doesn't stop push notifications on that device.** The device's push subscription stays linked to the user until someone else signs in there. *(Fixed: signing out unlinks this device; the next person to sign in on it re-links it to themselves)*
 
 ## C. Speed
 

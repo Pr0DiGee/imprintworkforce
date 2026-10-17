@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { collection, getDocs, doc, setDoc, serverTimestamp, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { DevotionDaily, UserProfile } from "@/types";
@@ -217,6 +217,35 @@ export function DevotionClient({
     }
   };
 
+  // Topic: update the screen on every keystroke, but save once typing pauses
+  // (or the box loses focus), instead of one database write per letter.
+  const TOPIC_SAVE_DELAY_MS = 800;
+  const topicTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const pendingTopics = useRef<Record<string, string>>({});
+  const handleDayUpdateRef = useRef(handleDayUpdate);
+  useEffect(() => {
+    handleDayUpdateRef.current = handleDayUpdate;
+  });
+
+  const flushTopic = useCallback((date: string) => {
+    clearTimeout(topicTimers.current[date]);
+    delete topicTimers.current[date];
+    if (!(date in pendingTopics.current)) return;
+    const topic = pendingTopics.current[date];
+    delete pendingTopics.current[date];
+    handleDayUpdateRef.current(date, { topic });
+  }, []);
+
+  const handleTopicChange = (date: string, topic: string) => {
+    setDevotions(prev => ({ ...prev, [date]: { ...(prev[date] ?? { date, assigned_to: "", backup_teacher: "", teaching_notes: "", last_edited_by: user.uid }), topic } as DevotionDaily }));
+    pendingTopics.current[date] = topic;
+    clearTimeout(topicTimers.current[date]);
+    topicTimers.current[date] = setTimeout(() => flushTopic(date), TOPIC_SAVE_DELAY_MS);
+  };
+
+  // Save anything still pending when leaving the page
+  useEffect(() => () => Object.keys(pendingTopics.current).forEach(flushTopic), [flushTopic]);
+
   const handleNotesSave = async (date: string, notes: string) => {
     const saved = await handleDayUpdate(date, { teaching_notes: notes });
     if (!saved) return; // keep the editor open so nothing typed is lost
@@ -329,7 +358,8 @@ export function DevotionClient({
                 <div className="flex-1 flex items-center gap-3 w-full">
                   <textarea
                     value={dev?.topic || ""}
-                    onChange={(e) => handleDayUpdate(date, { topic: e.target.value })}
+                    onChange={(e) => handleTopicChange(date, e.target.value)}
+                    onBlur={() => flushTopic(date)}
                     onInput={(e) => {
                       const el = e.currentTarget;
                       el.style.height = "auto";

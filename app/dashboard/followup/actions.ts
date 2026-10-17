@@ -36,3 +36,33 @@ export async function deleteFollowUpContact(
     return { error: "Failed to delete contact." };
   }
 }
+
+/** Pastors/admins hand a contact to another worker (e.g. after the old one was deleted). */
+export async function reassignFollowUpContact(
+  contactId: string,
+  newAssigneeUid: string
+): Promise<{ success: true } | { error: string }> {
+  const user = await getServerUser();
+  if (!user || !can(user, "manageAllFollowUps")) return { error: "Unauthorized" };
+  if (!contactId || contactId.includes("/") || !newAssigneeUid || newAssigneeUid.includes("/")) {
+    return { error: "Invalid request" };
+  }
+
+  try {
+    const db = getAdminDb();
+    const [contact, assignee] = await Promise.all([
+      db.collection("followup_contacts").doc(contactId).get(),
+      db.collection("users").doc(newAssigneeUid).get(),
+    ]);
+    if (!contact.exists) return { error: "Contact not found." };
+    if (!assignee.exists) return { error: "That worker no longer exists." };
+
+    await contact.ref.update({ assigned_to: newAssigneeUid });
+    revalidatePath("/dashboard/followup");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (err) {
+    console.error("[reassignFollowUpContact]", err);
+    return { error: "Failed to reassign contact." };
+  }
+}

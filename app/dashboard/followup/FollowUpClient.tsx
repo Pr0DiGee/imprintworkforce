@@ -144,6 +144,7 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
           logs={logs}
           userMap={userMap}
           targetSunday={targetSunday}
+          canReassign={isPastor}
         />
       ) : (
         <>
@@ -276,7 +277,7 @@ function ContactCard({
             <h3 className="font-semibold text-base" style={{ color: "var(--text-primary)" }}>{contact.name}</h3>
             <div className="flex items-center gap-1.5 text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
               <UserCheck size={12} />
-              <span>{contact.assigned_to === user.uid ? "You" : (userMap[contact.assigned_to] || "Unknown Worker")}</span>
+              <span>{contact.assigned_to === user.uid ? "You" : (userMap[contact.assigned_to] || "Unassigned")}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
