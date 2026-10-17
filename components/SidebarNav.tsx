@@ -19,6 +19,7 @@ import {
   MapPin
 } from "lucide-react";
 import React from "react";
+import { canManageAttendance } from "@/lib/roles";
 
 const CORE_LINKS = [
   { href: "/dashboard", id: "nav-dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -43,6 +44,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const isLeadPastor = userProfile?.role === "LEAD_PASTOR";
   const isAdmin = userProfile?.role === "ADMIN";
   const isPastorPlus = ["PASTOR", "LEAD_PASTOR", "ADMIN"].includes(userProfile?.role ?? "");
+  const showAttendance = userProfile ? canManageAttendance(userProfile) : false;
 
   const linkClasses = (href: string) => {
     const active = isActive(pathname, href);
@@ -80,9 +82,10 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         </Link>
       ))}
 
-      {/* PASTOR+ sub-links */}
-      {isPastorPlus && (
+      {/* Attendance (pastors + ushers) and PASTOR+ sub-links */}
+      {(showAttendance || isPastorPlus) && (
         <div className="pl-8 space-y-0.5 mt-1 mb-2">
+          {showAttendance && (
           <Link
             href="/dashboard/attendance"
             id="nav-attendance"
@@ -93,6 +96,9 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           >
             Attendance
           </Link>
+          )}
+          {isPastorPlus && (
+          <>
           <Link
             href="/dashboard/reports/all"
             id="nav-all-reports"
@@ -113,6 +119,8 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           >
             History
           </Link>
+          </>
+          )}
         </div>
       )}
 

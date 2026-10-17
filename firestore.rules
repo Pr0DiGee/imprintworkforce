@@ -115,26 +115,18 @@ service cloud.firestore {
                             && request.resource.data.user_id == uid();
     }
 
-    // ─── Congregation (public check-in) ────────────────────────────────
+    // ─── Congregation & Attendance ─────────────────────────────────────
+    // Check-in and member edits go through server code (Admin SDK), which
+    // bypasses these rules. Browsers can't write these collections (apart from
+    // the admin catch-all at the bottom), and only pastors can read them directly.
     match /congregation/{memberId} {
-      // No auth required for writes (public check-in kiosk)
-      allow create: if true;
-      allow update: if true;
-
-      // Only pastors can read congregation data
       allow read: if isPastorPlus();
+      allow write: if false;
     }
 
-    // ─── Attendance ────────────────────────────────────────────────────
     match /attendance/{recordId} {
-      // No auth required for creates (public check-in)
-      allow create: if true;
-
-      // Only pastors can read attendance records
       allow read: if isPastorPlus();
-
-      // No updates or deletes on attendance records
-      allow update, delete: if false;
+      allow write: if false;
     }
 
     // ─── Worker Notes (Private) ──────────────────────────────────────

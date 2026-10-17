@@ -41,4 +41,12 @@ export function canDeleteTasks(role: AppRole | string): boolean {
   return PASTOR_ROLES.includes(role as AppRole);
 }
 
+/**
+ * Attendance list, check-in QR and congregation member details:
+ * pastors and anyone in the Ushering department.
+ */
+export function canManageAttendance(user: { role: AppRole | string; departments?: string[] }): boolean {
+  return isPastor(user.role) || (user.departments ?? []).includes("USHERING");
+}
+
 export { PASTOR_ROLES, DEVOTION_EDIT_ROLES, ROSTER_EDIT_ROLES };

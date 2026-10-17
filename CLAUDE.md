@@ -68,6 +68,9 @@ Rich text (reports, devotion notes, notes) is stored as **stringified Tiptap JSO
 - Vercel cron (`vercel.json`, 08:00 UTC) hits `/api/cron/daily-reminders` (Bearer `CRON_SECRET`, check skipped outside production). Logic is in `lib/server-crons.ts`: task reminders daily, roster reminders on Saturday, devotion reminders the other days; weekday is computed in `Africa/Lagos`.
 - Email goes through Resend at `/api/send` (sender `no-reply@zubby.me`). Recipients may be the placeholders `CHURCH_EMAIL`, `LEAD_PASTOR_EMAIL`, `DEVELOPER_EMAIL`, resolved from env vars of the same names.
 
+### Public check-in
+`/checkin` (no login) is driven by server actions in `app/checkin/actions.ts`. They only work on Sundays in Lagos time (`getLagosToday()`; `CHECKIN_TEST_NOW` fakes the clock in dev only). The member is recognised by the `iw_member_id` cookie, or by a phone number normalised with `lib/phone.ts` (`phone_normalized`, with a fallback for legacy raw numbers). Only the first name is ever returned. Existing members are never edited from check-in, and attendance docs are `{memberId}_{sunday}` (one per Sunday). Phone lookups are rate-limited per IP in `checkin_rate_limits`. Pastors and members of the USHERING department (`canManageAttendance`) see `/dashboard/attendance` and edit member details via `app/dashboard/attendance/actions.ts`. Browsers can't write `congregation`/`attendance` at all.
+
 ### PWA
 `public/manifest.json` + `public/sw.js` (network-first cache plus push/notificationclick handlers), registered from an inline script in `app/layout.tsx` that also applies the dark-mode class before hydration. `proxy.ts` must keep letting `/manifest.json`, `/sw.js`, and `*.png` through without auth.
 

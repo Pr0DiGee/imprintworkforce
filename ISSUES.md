@@ -9,9 +9,9 @@ Suggested order: A (security) → 8 → 9–11 → C (speed) → the rest.
   Fix: require a signed-in user; only allow the fixed church / lead pastor recipients; build the email wrapper on the server; drop the unused developer recipient.
 - [x] **2. `/api/notifications/send` lets any signed-in user push any message to any user.** *(Fixed: event-based, server picks recipient/text; duplicates blocked via `push_events`.)*
   Fix: decide recipients and text on the server from the action that happened.
-- [ ] **3. Public check-in phone lookup leaks PII** (`lookupByPhone` in `app/checkin/actions.ts` returns name, email, birthday, address to anyone).
+- [x] **3. Public check-in phone lookup leaks PII** (`lookupByPhone` in `app/checkin/actions.ts` returns name, email, birthday, address to anyone). *(Fixed: check-in redesigned; only the first name is ever shown)*
   Fix: return only enough to confirm identity (first name), nothing else.
-- [ ] **4. Anyone can overwrite congregation records.** `processCheckIn` trusts a member `id` from the browser; Firestore rules allow unauthenticated `create`/`update` on `congregation` and `create` on `attendance`.
+- [x] **4. Anyone can overwrite congregation records.** `processCheckIn` trusts a member `id` from the browser; Firestore rules allow unauthenticated `create`/`update` on `congregation` and `create` on `attendance`. *(Fixed: browsers can't write congregation/attendance; existing members are never edited from check-in, ushers edit from Attendance. Rules deployed to dev; production rules still to deploy)*
   Fix: close those rules (check-in uses the Admin SDK) and validate the id server-side.
 - [ ] **5. Department self-escalation.** Users can edit the legacy `department` field on their own profile, and the rules fall back to it in `userDepartments()`.
   Fix: block the field in rules, then drop the fallback.
@@ -31,12 +31,15 @@ Suggested order: A (security) → 8 → 9–11 → C (speed) → the rest.
 - [ ] **13. Role lists disagree** between `lib/roles.ts`, `firestore.rules`, `SidebarNav`, devotion page, follow-up page (ADMIN / SYSTEM_ADMIN handling).
   Fix: single source of truth, mirrored in rules.
 - [ ] **14. Devotion notes toast "saved" even when the save failed.**
-- [ ] **15. Duplicate check-ins on the same Sunday inflate `attendance_count`.**
+- [x] **15. Duplicate check-ins on the same Sunday inflate `attendance_count`.** *(Fixed: one attendance record per member per Sunday)*
   Fix: one attendance doc per member per Sunday (`{memberId}_{sunday}`).
 - [ ] **16. Deletes leave orphans** — contact delete leaves follow-up logs; user delete leaves tasks/roster/contacts showing "Unknown".
 - [ ] **17. Push subscription stays bound to the previous user after sign-out on a shared device.**
 - [x] **30. iPhone pushes failed when running locally.** The local `.env.local` had `VAPID_SUBJECT=mailto:pastorboye@imprint.local`; Apple rejects non-real domains (403 BadJwtToken). Live was unaffected: Vercel already uses a real Gmail address. *(Fixed locally and in the code's fallback.)*
 - [ ] **18. Small ones:** dashboard report total hard-coded to 5; target Sunday computed in UTC not Lagos time (first hour of Sunday is "last week"); password change doesn't invalidate other sessions; `GET /api/auth/session` returns 500 on a malformed cookie.
+
+- [x] **31. Attendance visitor labels ignored the real visit count** (`attendance_count` wasn't passed to the page, so labels guessed from the sign-up date). *(Fixed.)*
+- [ ] **32. Clean up `checkin_rate_limits`.** Old rate-limit windows pile up; enable a Firestore TTL policy on `expires_at` for that collection (Firebase console → Firestore → TTL).
 
 ## C. Speed
 

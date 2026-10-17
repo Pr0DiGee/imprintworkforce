@@ -5,7 +5,75 @@ import { useRouter } from "next/navigation";
 import { CongregationMember, AttendanceRecord } from "@/types";
 import { formatTargetSunday, addWeeksToDate, getTargetSundayString } from "@/lib/sunday";
 import Link from "next/link";
-import { Users, Search, QrCode, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, Search, QrCode, Filter, ChevronLeft, ChevronRight, Pencil, X } from "lucide-react";
+import { toast } from "sonner";
+import { updateMember } from "./actions";
+
+const fieldClass = "w-full px-3 py-2 rounded-md border text-sm";
+const fieldStyle = { background: "var(--bg-input)", borderColor: "var(--border-primary)", color: "var(--text-primary)" };
+
+function EditMemberModal({ member, onClose }: { member: CongregationMember; onClose: () => void }) {
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    const res = await updateMember(member.id!, new FormData(e.currentTarget));
+    setSaving(false);
+    if ("error" in res) {
+      setError(res.error);
+      return;
+    }
+    toast.success("Member details updated");
+    onClose();
+    router.refresh();
+  }
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Edit member" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="w-full max-w-md rounded-xl shadow-xl" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border-primary)" }}>
+          <h3 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>Edit member details</h3>
+          <button type="button" onClick={onClose} aria-label="Close" style={{ color: "var(--text-muted)" }}><X size={18} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-3">
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>Full Name *</label>
+            <input name="name" required defaultValue={member.name} className={fieldClass} style={fieldStyle} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>Phone Number *</label>
+            <input name="phone" type="tel" required defaultValue={member.phone} className={fieldClass} style={fieldStyle} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>Email</label>
+            <input name="email" type="email" defaultValue={member.email ?? ""} className={fieldClass} style={fieldStyle} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>Birthday</label>
+              <input name="birthday" type="date" defaultValue={member.birthday ?? ""} className={fieldClass} style={fieldStyle} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>Address</label>
+              <input name="address" defaultValue={member.address ?? ""} className={fieldClass} style={fieldStyle} />
+            </div>
+          </div>
+          {error && <p role="alert" className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>}
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm rounded-md" style={{ color: "var(--text-secondary)" }}>Cancel</button>
+            <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium text-white rounded-md disabled:opacity-60" style={{ background: "var(--accent)" }}>
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 interface AttendanceClientProps {
   members: CongregationMember[];
@@ -17,6 +85,7 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"ALL" | "FIRST_TIMER" | "SECOND_TIMER" | "REGULAR">("ALL");
+  const [editing, setEditing] = useState<CongregationMember | null>(null);
 
   const checkedInIds = new Set(todayAttendance.map(a => a.member_id));
 
@@ -68,6 +137,7 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
 
   return (
     <div className="max-w-5xl space-y-6">
+      {editing && <EditMemberModal member={editing} onClose={() => setEditing(null)} />}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
@@ -165,6 +235,7 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
                 <th className="text-left px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Phone</th>
                 <th className="text-left px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Visitor Status</th>
                 <th className="text-right px-4 py-3 font-semibold" style={{ color: "var(--text-secondary)" }}>Check-in</th>
+                <th className="px-2 py-3"><span className="sr-only">Edit</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -209,13 +280,25 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
                         </span>
                       )}
                     </td>
+                    <td className="px-2 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setEditing(member)}
+                        className="p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10"
+                        style={{ color: "var(--text-secondary)" }}
+                        aria-label={`Edit ${member.name}`}
+                        title="Edit details"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
               
               {filteredMembers.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-[var(--text-muted)] italic text-sm">
+                  <td colSpan={5} className="px-4 py-8 text-center text-[var(--text-muted)] italic text-sm">
                     No members found.
                   </td>
                 </tr>

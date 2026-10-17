@@ -5,7 +5,7 @@ import { CongregationMember, AttendanceRecord } from "@/types";
 import { getTargetSundayString } from "@/lib/sunday";
 import { AttendanceClient } from "./AttendanceClient";
 
-import { isPastor } from "@/lib/roles";
+import { canManageAttendance } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
   const params = await searchParams;
   if (!user) redirect("/login");
   
-  if (!isPastor(user.role)) {
+  if (!canManageAttendance(user)) {
     redirect("/dashboard");
   }
 
@@ -30,6 +30,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
       email: data.email,
       birthday: data.birthday,
       address: data.address,
+      attendance_count: data.attendance_count,
       created_at: data.created_at?.toDate().toISOString(),
       last_checkin: data.last_checkin?.toDate().toISOString(),
     } as any;

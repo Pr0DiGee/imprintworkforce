@@ -152,6 +152,8 @@ export interface CongregationMember {
   id?: string;
   name: string;
   phone: string;
+  /** Normalised form of `phone` (e.g. "+2348031234567") used for matching */
+  phone_normalized?: string;
   email?: string;
   birthday?: string;
   address?: string;

@@ -117,4 +117,23 @@ export function formatRelativeCheckInDate(dateStr: string | Date | number | null
   return format(date, "dd-MM-yyyy");
 }
 
+/**
+ * Today's date (YYYY-MM-DD) and whether it's Sunday, in church time (Lagos),
+ * regardless of the server's timezone (Vercel runs in UTC).
+ */
+export function getLagosToday(now: Date = new Date()): { date: string; isSunday: boolean } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  }).formatToParts(now);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return {
+    date: `${get("year")}-${get("month")}-${get("day")}`,
+    isSunday: get("weekday") === "Sun",
+  };
+}
+
 export { parseISO, format, isBefore, isAfter, isSameDay };

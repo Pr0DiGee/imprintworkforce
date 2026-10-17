@@ -1,37 +1,22 @@
 import { cookies } from "next/headers";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { CongregationMember } from "@/types";
+import { getLagosToday } from "@/lib/date";
+import { firstName } from "@/lib/phone";
 import { CheckInClient } from "./CheckInClient";
-import { getTargetSundayString } from "@/lib/sunday";
+
+export const dynamic = "force-dynamic";
 
 export default async function CheckInPage() {
-  const cookieStore = await cookies();
-  const memberIdCookie = cookieStore.get("iw_member_id");
-  let member: CongregationMember | null = null;
+  const fake = process.env.NODE_ENV !== "production" ? process.env.CHECKIN_TEST_NOW : undefined;
+  const today = getLagosToday(fake ? new Date(fake) : new Date());
+  const memberId = (await cookies()).get("iw_member_id")?.value;
 
-  if (memberIdCookie?.value) {
-    const db = getAdminDb();
-    const memberDoc = await db.collection("congregation").doc(memberIdCookie.value).get();
-    
-    if (memberDoc.exists) {
-      const data = memberDoc.data();
-      member = {
-        id: memberDoc.id,
-        name: data?.name || "",
-        phone: data?.phone || "",
-        email: data?.email,
-        birthday: data?.birthday,
-        address: data?.address,
-      };
-    }
+  // Only the first name ever reaches the browser
+  let rememberedName: string | null = null;
+  if (memberId && !memberId.includes("/")) {
+    const snap = await getAdminDb().collection("congregation").doc(memberId).get();
+    if (snap.exists) rememberedName = firstName(snap.data()?.name ?? "");
   }
 
-  const targetSunday = getTargetSundayString();
-
-  return (
-    <CheckInClient 
-      initialMember={member} 
-      targetSunday={targetSunday} 
-    />
-  );
+  return <CheckInClient isSunday={today.isSunday} rememberedName={rememberedName} />;
 }
