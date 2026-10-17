@@ -35,7 +35,7 @@ Suggested order: A (security) → 8 → 9–11 → C (speed) → the rest.
   Fix: one attendance doc per member per Sunday (`{memberId}_{sunday}`).
 - [ ] **16. Deletes leave orphans** — contact delete leaves follow-up logs; user delete leaves tasks/roster/contacts showing "Unknown".
 - [ ] **17. Push subscription stays bound to the previous user after sign-out on a shared device.**
-- [x] **30. Push notifications never reached iPhones.** `VAPID_SUBJECT` was `mailto:pastorboye@imprint.local`; Apple rejects non-real domains (403 BadJwtToken), Android/Chrome don't check. *(Fixed: real contact address; set `VAPID_SUBJECT=mailto:imprintglobalministry@gmail.com` on Vercel.)*
+- [x] **30. iPhone pushes failed when running locally.** The local `.env.local` had `VAPID_SUBJECT=mailto:pastorboye@imprint.local`; Apple rejects non-real domains (403 BadJwtToken). Live was unaffected: Vercel already uses a real Gmail address. *(Fixed locally and in the code's fallback.)*
 - [ ] **18. Small ones:** dashboard report total hard-coded to 5; target Sunday computed in UTC not Lagos time (first hour of Sunday is "last week"); password change doesn't invalidate other sessions; `GET /api/auth/session` returns 500 on a malformed cookie.
 
 ## C. Speed
