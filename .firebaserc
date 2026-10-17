@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "imprintworkforce-49256"
+    "default": "imprintworkforce-49256",
+    "dev": "imprintworkforce-dev"
   }
 }

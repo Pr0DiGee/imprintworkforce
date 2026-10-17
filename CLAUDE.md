@@ -17,8 +17,9 @@ npm run lint                       # eslint (flat config, eslint-config-next)
 npx tsc --noEmit                   # typecheck (not wired into a script)
 npx vitest run                     # tests (no "test" script exists)
 npx vitest run __tests__/auth.test.ts   # single test file
-npx tsx scripts/seed-schedule.ts   # seed users + devotion/roster schedule (tsx is not a dependency; writes to the real Firebase project from .env.local)
-firebase deploy --only firestore:rules  # rules live in firestore.rules
+npx tsx scripts/seed-schedule.ts   # seed users + devotion/roster schedule into the DEV project (refuses to run against production)
+npx firebase-tools deploy --only firestore --project dev   # rules + indexes to imprintworkforce-dev (alias in .firebaserc)
+npx firebase-tools deploy --only firestore --project default   # same to PRODUCTION; only after testing on dev
 ```
 
 Test coverage is effectively nil (`__tests__/auth.test.ts` is a placeholder; `__tests__/setup.ts` mocks a `@/context/ToastContext` that no longer exists — toasts are `sonner`). Vitest uses jsdom and the `@/` → repo-root alias.
@@ -74,5 +75,7 @@ Rich text (reports, devotion notes, notes) is stored as **stringified Tiptap JSO
 Tailwind v4 via `@tailwindcss/postcss`, with no `tailwind.config.js`; theme tokens are CSS variables in `app/globals.css` (`--bg-page`, `--text-primary`, `--accent`, …) and components mostly use them through inline `style={{ … "var(--x)" }}`. Dark mode is a `dark` class on `<html>` handled by `context/ThemeContext.tsx` (localStorage key `iw-theme`); `next-themes` is installed but not used. `components.json` (shadcn) exists but there is no `components/ui` directory. Print layouts rely on `.no-print` / `.print-full-width` classes.
 
 ## Environment
+
+Two Firebase projects: **production** `imprintworkforce-49256` (values in `.env.local`, and on Vercel) and a **dev** project whose values live in `.env.development.local`. Next loads `.env.development.local` before `.env.local` during `next dev`, so local development uses the dev project; anything not overridden there (Resend, VAPID, cron secret) falls back to `.env.local`. `lib/firebase/admin.ts` throws if the service account and `NEXT_PUBLIC_FIREBASE_PROJECT_ID` point at different projects, and the seed script refuses to run against production. Never test writes, pushes, or emails against production. `.env.example` lists every key.
 
 `.env.local` needs: `NEXT_PUBLIC_FIREBASE_*` (client config), `FIREBASE_SERVICE_ACCOUNT_JSON`, `SESSION_SECRET`, `CRON_SECRET`, `RESEND_API_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, plus `CHURCH_EMAIL` / `LEAD_PASTOR_EMAIL` / `DEVELOPER_EMAIL` for report forwarding.

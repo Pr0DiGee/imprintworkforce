@@ -1,5 +1,15 @@
 import { loadEnvConfig } from "@next/env";
-loadEnvConfig(process.cwd());
+// Load env the same way `next dev` does, so .env.development.local (dev project) wins over .env.local
+loadEnvConfig(process.cwd(), true);
+
+const PRODUCTION_PROJECT_ID = "imprintworkforce-49256";
+if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === PRODUCTION_PROJECT_ID) {
+  console.error(
+    `Refusing to seed: env points at the production project (${PRODUCTION_PROJECT_ID}). ` +
+      "Put the dev project's values in .env.development.local first."
+  );
+  process.exit(1);
+}
 
 import { getAdminAuth, getAdminDb } from "../lib/firebase/admin";
 import { AppRole, Department } from "../types";

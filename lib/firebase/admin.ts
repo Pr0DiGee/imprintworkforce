@@ -1,4 +1,4 @@
-import { initializeApp, getApps, cert, App } from "firebase-admin/app";
+import { initializeApp, getApps, cert, App, ServiceAccount } from "firebase-admin/app";
 import { getAuth, Auth } from "firebase-admin/auth";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
 import { getStorage, Storage } from "firebase-admin/storage";
@@ -25,7 +25,7 @@ function getAdminApp(): App {
     );
   }
 
-  let serviceAccount: object;
+  let serviceAccount: { project_id?: string };
   try {
     serviceAccount = JSON.parse(Buffer.from(raw, "base64").toString("utf-8"));
   } catch {
@@ -35,8 +35,17 @@ function getAdminApp(): App {
     );
   }
 
+  // Guard against a half-switched env (e.g. dev client config with the production service account)
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  if (projectId && serviceAccount.project_id && serviceAccount.project_id !== projectId) {
+    throw new Error(
+      `FIREBASE_SERVICE_ACCOUNT_JSON is for project "${serviceAccount.project_id}" but ` +
+        `NEXT_PUBLIC_FIREBASE_PROJECT_ID is "${projectId}". Both must point at the same Firebase project.`
+    );
+  }
+
   _app = initializeApp({
-    credential: cert(serviceAccount),
+    credential: cert(serviceAccount as ServiceAccount),
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   });
