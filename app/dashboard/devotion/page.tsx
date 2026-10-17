@@ -5,8 +5,8 @@ import { getMondayOfWeek, getMonToSatDates } from "@/lib/date";
 import { fetchAllUsers, fetchDevotionForDates } from "@/lib/server-data";
 import { DevotionDaily } from "@/types";
 import { DevotionClient } from "./DevotionClient";
+import { can } from "@/lib/permissions";
 
-const CAN_EDIT_ROLES = ["DEVOTION_LEAD", "PASTOR", "LEAD_PASTOR"];
 
 export default async function DevotionPage() {
   const user = await getServerUser();
@@ -20,7 +20,7 @@ export default async function DevotionPage() {
   const users = await fetchAllUsers();
   users.sort((a, b) => a.name.localeCompare(b.name));
 
-  const hasPermission = CAN_EDIT_ROLES.includes(user.role);
+  const hasPermission = can(user, "editDevotion");
 
   return (
     <DevotionClient

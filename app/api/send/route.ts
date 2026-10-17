@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { getServerUser } from "@/lib/server-auth";
-import { isPastor } from "@/lib/roles";
+import { can } from "@/lib/permissions";
 import { DEPARTMENTS, type Department } from "@/types";
 
 // The only addresses reports can be forwarded to. Values come from env vars
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
     // Only pastors or members of the report's department may forward it
     const userDepts = user.departments ?? [];
-    if (!isPastor(user.role) && !userDepts.includes(department as Department)) {
+    if (!can(user, "viewAllReports") && !userDepts.includes(department as Department)) {
       return NextResponse.json({ error: "You cannot forward this department's report" }, { status: 403 });
     }
 

@@ -11,6 +11,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { ToolbarBtn } from "@/components/ToolbarBtn";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { notifyEvent } from "@/lib/client-notifications";
+import { serializeData } from "@/lib/serialize";
 
 // ─── Inline Editor ─────────────────────────────────────────────────────────────
 
@@ -145,7 +146,7 @@ export function DevotionClient({
       
       const devMap: Record<string, DevotionDaily> = {};
       devSnap.docs.forEach(doc => {
-        const data = doc.data() as DevotionDaily;
+        const data = serializeData(doc.data()) as DevotionDaily;
         devMap[data.date] = { id: doc.id, ...data };
       });
       setDevotions(devMap);
@@ -286,7 +287,7 @@ export function DevotionClient({
                       style={{ background: "var(--bg-input)", color: "var(--text-primary)", borderColor: "var(--border-primary)" }}
                     >
                       <option value="">— assign teacher —</option>
-                      {users.filter(u => u.role !== "ADMIN" && u.role !== "SYSTEM_ADMIN").map(u => (
+                      {users.filter(u => u.role !== "ADMIN").map(u => (
                         <option key={u.uid} value={u.uid}>{u.name}</option>
                       ))}
                     </select>
@@ -301,7 +302,7 @@ export function DevotionClient({
                       style={{ background: "var(--bg-input)", color: "var(--text-primary)", borderColor: "var(--border-primary)" }}
                     >
                       <option value="">— assign backup —</option>
-                      {users.filter(u => u.role !== "ADMIN" && u.role !== "SYSTEM_ADMIN").map(u => (
+                      {users.filter(u => u.role !== "ADMIN").map(u => (
                         <option key={u.uid} value={u.uid}>{u.name}</option>
                       ))}
                     </select>

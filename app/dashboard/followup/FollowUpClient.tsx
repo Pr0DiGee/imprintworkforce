@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { UserProfile, FollowUpContact, FollowUpLog, FollowUpMethod } from "@/types";
+import { can } from "@/lib/permissions";
 import { format } from "date-fns";
 import { addDoc, collection, serverTimestamp, deleteDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
@@ -27,7 +28,7 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
   const [showAddModal, setShowAddModal] = useState(false);
   const router = useRouter();
 
-  const isPastor = user.role === "PASTOR" || user.role === "LEAD_PASTOR";
+  const isPastor = can(user, "manageAllFollowUps");
   const defaultCampus = user.departments?.includes("BABCOCK_CAMPUS") ? "BABCOCK" : "GLOBAL";
   const [campusView, setCampusView] = useState<"GLOBAL" | "BABCOCK">(defaultCampus);
 

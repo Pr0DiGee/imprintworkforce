@@ -19,7 +19,7 @@ import {
   MapPin
 } from "lucide-react";
 import React from "react";
-import { canManageAttendance } from "@/lib/roles";
+import { can } from "@/lib/permissions";
 
 const CORE_LINKS = [
   { href: "/dashboard", id: "nav-dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -41,10 +41,9 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { userProfile } = useAuth();
   const { theme, toggle } = useTheme();
-  const isLeadPastor = userProfile?.role === "LEAD_PASTOR";
-  const isAdmin = userProfile?.role === "ADMIN";
-  const isPastorPlus = ["PASTOR", "LEAD_PASTOR", "ADMIN"].includes(userProfile?.role ?? "");
-  const showAttendance = userProfile ? canManageAttendance(userProfile) : false;
+  const isAdmin = can(userProfile, "manageUsers");
+  const isPastorPlus = can(userProfile, "viewAllReports");
+  const showAttendance = can(userProfile, "manageAttendance");
 
   const linkClasses = (href: string) => {
     const active = isActive(pathname, href);

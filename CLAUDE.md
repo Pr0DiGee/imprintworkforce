@@ -15,14 +15,16 @@ npm run dev                        # dev server (localhost:3000)
 npm run build                      # production build
 npm run lint                       # eslint (flat config, eslint-config-next)
 npx tsc --noEmit                   # typecheck (not wired into a script)
-npx vitest run                     # tests (no "test" script exists)
-npx vitest run __tests__/auth.test.ts   # single test file
-npx tsx scripts/seed-schedule.ts   # seed users + devotion/roster schedule into the DEV project (refuses to run against production)
+npm test                           # vitest run (includes the rules/permissions sync check)
+npx vitest run __tests__/permissions.test.ts   # single test file
+npm run rules:sync                 # regenerate the permissions block in firestore.rules from lib/permissions.ts
+npm run rules:check                # fail if firestore.rules is out of date
+npm run seed:dev                   # seed users + devotion/roster schedule into the DEV project (refuses to run against production)
 npx firebase-tools deploy --only firestore --project dev   # rules + indexes to imprintworkforce-dev (alias in .firebaserc)
 npx firebase-tools deploy --only firestore --project default   # same to PRODUCTION; only after testing on dev
 ```
 
-Test coverage is effectively nil (`__tests__/auth.test.ts` is a placeholder; `__tests__/setup.ts` mocks a `@/context/ToastContext` that no longer exists — toasts are `sonner`). Vitest uses jsdom and the `@/` → repo-root alias.
+Test coverage is thin: `__tests__/permissions.test.ts` checks the permission decisions and that `firestore.rules` matches `lib/permissions.ts`; `__tests__/auth.test.ts` is a placeholder. Vitest uses jsdom and the `@/` → repo-root alias.
 
 Root-level `fix_profile.js`, `update_profile.js`, `scratch_script.js` are leftover one-off codemod scripts, not part of the app (they also produce lint parse errors).
 
@@ -43,13 +45,17 @@ Root-level `fix_profile.js`, `update_profile.js`, `scratch_script.js` are leftov
 `verifySession` is duplicated in `app/api/auth/session/route.ts` (imported by the notifications routes) and as `verifySessionCookie` in `lib/server-auth.ts` — keep them in sync or consolidate.
 
 ### Data flow: server reads, client writes
-- **Reads**: dashboard `page.tsx` Server Components fetch with the Admin SDK (helpers in `lib/server-data.ts`, getters in `lib/firebase/admin.ts`), pass the data as props to a sibling `*Client.tsx` component. Firestore Timestamps must go through `serializeData()` (→ ISO strings) before crossing to client components; client code therefore handles deadlines/timestamps as either ISO strings, client `Timestamp`s, or `{_seconds}` objects.
+- **Reads**: dashboard `page.tsx` Server Components fetch with the Admin SDK (helpers in `lib/server-data.ts`, getters in `lib/firebase/admin.ts`), pass the data as props to a sibling `*Client.tsx` component. Dates in the browser are ISO strings: run every Firestore document through `serializeData()` (`lib/serialize.ts`) before it reaches component state, including client-side reloads, and read dates with `toJsDate()` from `lib/date.ts` (it accepts every shape and never returns an Invalid Date). Don't put `serverTimestamp()` sentinels in local state; use `new Date().toISOString()`.
 - **Writes**: mostly done directly from client components with the Firebase client SDK (`setDoc`/`updateDoc`/`addDoc`), so **`firestore.rules` is the real authorization layer** for reports, tasks, roster, devotion, feedback, notes, and follow-up. When changing who can do what, update both the UI gating and the rules.
 - **Server-only writes** (Admin SDK, bypass rules): user CRUD (`/api/admin/users`, ADMIN only), credential changes (`/api/auth/update-credentials`), profile name/photo (`app/dashboard/profile/actions.ts`), public check-in (`app/checkin/actions.ts`), push subscriptions.
 - `FIREBASE_SERVICE_ACCOUNT_JSON` is the **base64-encoded** service account JSON; the Admin app is a lazy singleton.
 
-### Roles and departments
-Defined in `types/index.ts` (`AppRole`, `Department`, `RosterDuty`, all collection interfaces). Role helpers live in `lib/roles.ts`, but role lists are also hard-coded in `firestore.rules`, `components/SidebarNav.tsx`, `app/dashboard/devotion/page.tsx`, and the reports pages — and they currently disagree in places (e.g. whether `ADMIN`/`SYSTEM_ADMIN` count). Users have a `departments[]` array; the legacy single `department` field is still read by the rules and written for compatibility.
+### Roles, departments and permissions
+Roles (`types/index.ts`): `WORKER`, `PASTOR`, `LEAD_PASTOR`, `ADMIN` (super-user). Users also have a `departments[]` array (CHOIR, MEDIA, USHERING, DEVOTION, BABCOCK_CAMPUS); some abilities come from a department rather than a role (DEVOTION edits the devotion schedule, USHERING manages attendance).
+
+**`lib/permissions.ts` is the single source of truth.** Never check `user.role === ...` directly: call `can(user, "editDevotion")` etc. on the server, in routes and in components. `firestore.rules` gets the same lists through a generated `// <generated:permissions>` block (`npm run rules:sync`); `npm test` fails if they drift. To change who can do something, edit `PERMISSIONS`, run `rules:sync`, and deploy the rules.
+
+Reports lock 24 hours after submission for everyone, admins included (`reportLocked()` in the rules, `REPORT_EDIT_WINDOW_MS` in `ReportsClient.tsx`). The admin catch-all rule deliberately skips the `reports` collection.
 
 ### Week / date model
 Everything is keyed to a "target Sunday" (`YYYY-MM-DD`). `getTargetSundayString()` in `lib/date.ts` returns the most recent Sunday (Sun–Sat is one service week); the devotion week is the Mon–Sat after it. `lib/sunday.ts` only re-exports `lib/date.ts`.

@@ -14,7 +14,9 @@ import { AssignTaskModal } from "@/components/AssignTaskModal";
 import { CheckSquare } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { Task, UserProfile } from "@/types";
-import { isPastor as checkPastor } from "@/lib/roles";
+import { can } from "@/lib/permissions";
+import { toJsDate } from "@/lib/date";
+import { serializeData } from "@/lib/serialize";
 
 const STATUS_ORDER: Record<string, number> = {
   IN_PROGRESS: 0,
@@ -27,13 +29,7 @@ function sortTasks(tasks: Task[]): Task[] {
     const statusDiff =
       (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3);
     if (statusDiff !== 0) return statusDiff;
-    // Handle admin SDK Timestamp objects (which have _seconds instead of toDate)
-    const getTime = (t: Task) => {
-      if (t.deadline?.toDate) return t.deadline.toDate().getTime();
-      const secs = (t.deadline as unknown as { _seconds?: number })?._seconds;
-      if (secs) return secs * 1000;
-      return Infinity;
-    };
+    const getTime = (t: Task) => toJsDate(t.deadline)?.getTime() ?? Infinity;
     return getTime(a) - getTime(b);
   });
 }
@@ -52,22 +48,16 @@ export function TasksClient({
   const [tasks, setTasks] = useState<Task[]>(sortTasks(initialTasks));
   const [showModal, setShowModal] = useState(false);
 
-  const userIsPastor = checkPastor(user.role);
+  const userIsPastor = can(user, "assignTasks");
+  const seesAllTasks = can(user, "viewAllTasks");
 
   // Reload tasks from the client after mutations (create, delete, status change)
   const reloadTasks = useCallback(async () => {
     try {
       let snap;
-      if (user.role === "LEAD_PASTOR") {
+      if (seesAllTasks) {
         snap = await getDocs(
           query(collection(db, "tasks"), orderBy("deadline", "asc"))
-        );
-      } else if (user.role === "PASTOR") {
-        snap = await getDocs(
-          query(
-            collection(db, "tasks"),
-            where("assigned_by", "==", user.uid)
-          )
         );
       } else {
         snap = await getDocs(
@@ -77,12 +67,12 @@ export function TasksClient({
           )
         );
       }
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Task));
+      const list = snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as Task));
       setTasks(sortTasks(list));
     } catch (err) {
       console.error("[TasksClient] Failed to reload tasks:", err);
     }
-  }, [user]);
+  }, [user, seesAllTasks]);
 
   const activeTasks = tasks.filter((t) => t.status !== "COMPLETED");
   const completedTasks = tasks.filter((t) => t.status === "COMPLETED");
@@ -95,11 +85,7 @@ export function TasksClient({
             className="text-lg font-semibold"
             style={{ color: "var(--text-primary)" }}
           >
-            {user.role === "LEAD_PASTOR"
-              ? "Global Tasks"
-              : user.role === "PASTOR"
-                ? "Assigned Tasks"
-                : "My Tasks"}
+            {seesAllTasks ? "All Tasks" : "My Tasks"}
           </h2>
           <p
             className="text-sm mt-0.5"

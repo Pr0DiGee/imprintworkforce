@@ -44,8 +44,7 @@ export function RosterClient({
 
   const rosterUsers = users.filter(u => 
     !(u.departments || []).includes("DEVOTION") && 
-    u.role !== "ADMIN" && 
-    u.role !== "SYSTEM_ADMIN"
+    u.role !== "ADMIN"
   );
 
   useEffect(() => {

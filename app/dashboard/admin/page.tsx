@@ -2,12 +2,13 @@ import { redirect } from "next/navigation";
 import { getServerUser } from "@/lib/server-auth";
 import { fetchAllUsers } from "@/lib/server-data";
 import { AdminClient } from "./AdminClient";
+import { can } from "@/lib/permissions";
 
 export default async function AdminPage() {
   const user = await getServerUser();
   if (!user) redirect("/login");
 
-  if (user.role !== "ADMIN") {
+  if (!can(user, "manageUsers")) {
     redirect("/dashboard");
   }
 

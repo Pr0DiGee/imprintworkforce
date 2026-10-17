@@ -4,9 +4,14 @@ import { useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { ReportEditor } from "@/components/ReportEditor";
-import { Report, Department, UserProfile } from "@/types";
-import { formatTargetSunday } from "@/lib/date";
+import { Report, Department, UserProfile, DEPARTMENTS } from "@/types";
+import { formatTargetSunday, toJsDate } from "@/lib/date";
+import { serializeData } from "@/lib/serialize";
+
+/** Submitted reports can be edited for 24 hours; firestore.rules enforces the same window */
+const REPORT_EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 import { WeekPicker } from "@/components/WeekPicker";
+import { can } from "@/lib/permissions";
 import { Printer } from "lucide-react";
 
 interface ReportsClientProps {
@@ -20,8 +25,7 @@ export function ReportsClient({
   currentSunday,
   initialReport,
 }: ReportsClientProps) {
-  const isLeadPastorPlus = ["LEAD_PASTOR", "ADMIN", "SYSTEM_ADMIN"].includes(user.role.toUpperCase());
-  const departments = (isLeadPastorPlus ? ["CHOIR", "MEDIA", "USHERING", "DEVOTION", "BABCOCK_CAMPUS"] : (user.departments || [])) as Department[];
+  const departments: Department[] = can(user, "writeAnyReport") ? DEPARTMENTS : (user.departments || []);
   
   // Default to first department if user has multiple, otherwise empty
   const [activeDept, setActiveDept] = useState<Department | "">(
@@ -34,15 +38,9 @@ export function ReportsClient({
   const [targetSunday, setTargetSunday] = useState(currentSunday);
 
   let isReadOnly = false;
-  if (report?.status === "SUBMITTED" && report.submitted_at) {
-    const submittedTime = (report.submitted_at as any).toDate 
-      ? (report.submitted_at as any).toDate().getTime() 
-      : new Date(report.submitted_at as unknown as string).getTime();
-    const now = new Date().getTime();
-    const hoursSinceSubmission = (now - submittedTime) / (1000 * 60 * 60);
-    if (hoursSinceSubmission > 24) {
-      isReadOnly = true;
-    }
+  const submittedAt = report?.status === "SUBMITTED" ? toJsDate(report.submitted_at) : null;
+  if (submittedAt && Date.now() - submittedAt.getTime() > REPORT_EDIT_WINDOW_MS) {
+    isReadOnly = true;
   }
 
   async function handleWeekOrDeptChange(newSunday: string, newDept: Department | "") {
@@ -53,7 +51,7 @@ export function ReportsClient({
       const docId = `${newDept}_${newSunday}`;
       const snap = await getDoc(doc(db, "reports", docId));
       if (snap.exists()) {
-        setReport({ id: snap.id, ...snap.data() } as Report);
+        setReport({ id: snap.id, ...serializeData(snap.data()) } as Report);
         setEditorMode("PROMPT");
       } else {
         setReport(null);

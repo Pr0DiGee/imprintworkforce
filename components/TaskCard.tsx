@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Avatar } from "@/components/Avatar";
 import { Trash2 } from "lucide-react";
 import { notifyEvent } from "@/lib/client-notifications";
+import { toJsDate } from "@/lib/date";
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
   ASSIGNED: "Assigned",
@@ -38,10 +39,7 @@ export function TaskCard({
   const [updating, setUpdating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Handle both client SDK Timestamps and admin SDK Timestamps
-  const deadline = task.deadline?.toDate?.()
-    ?? ((task.deadline as unknown as { _seconds?: number })?._seconds
-      ? new Date((task.deadline as unknown as { _seconds: number })._seconds * 1000)
-      : null);
+  const deadline = toJsDate(task.deadline);
   const isOverdue = deadline && status !== "COMPLETED" && deadline < new Date();
 
   async function handleStatusChange(next: TaskStatus) {

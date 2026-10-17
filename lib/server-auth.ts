@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { cookies } from "next/headers";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { serializeData } from "@/lib/server-data";
+import { serializeData } from "@/lib/serialize";
 import type { UserProfile } from "@/types";
 
 const SESSION_DURATION_SECONDS = 7 * 24 * 60 * 60; // 7 days

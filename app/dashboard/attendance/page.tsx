@@ -5,7 +5,7 @@ import { CongregationMember, AttendanceRecord } from "@/types";
 import { getTargetSundayString } from "@/lib/sunday";
 import { AttendanceClient } from "./AttendanceClient";
 
-import { canManageAttendance } from "@/lib/roles";
+import { can } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
   const params = await searchParams;
   if (!user) redirect("/login");
   
-  if (!canManageAttendance(user)) {
+  if (!can(user, "manageAttendance")) {
     redirect("/dashboard");
   }
 

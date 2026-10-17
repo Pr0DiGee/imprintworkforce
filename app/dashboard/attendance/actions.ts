@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getServerUser } from "@/lib/server-auth";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { canManageAttendance } from "@/lib/roles";
+import { can } from "@/lib/permissions";
 import { normalizePhone } from "@/lib/phone";
 
 /** Ushers and pastors correct a congregation member's details. */
@@ -12,7 +12,7 @@ export async function updateMember(
   formData: FormData
 ): Promise<{ success: true } | { error: string }> {
   const user = await getServerUser();
-  if (!user || !canManageAttendance(user)) return { error: "Unauthorized" };
+  if (!user || !can(user, "manageAttendance")) return { error: "Unauthorized" };
   if (!memberId || memberId.includes("/")) return { error: "Invalid member" };
 
   const name = String(formData.get("name") ?? "").trim().slice(0, 100);

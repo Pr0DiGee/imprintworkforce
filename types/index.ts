@@ -1,7 +1,16 @@
 import { Timestamp } from "firebase/firestore";
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
-export type AppRole = "WORKER" | "PASTOR" | "LEAD_PASTOR" | "DEVOTION_LEAD" | "ADMIN" | "SYSTEM_ADMIN";
+export type AppRole = "WORKER" | "PASTOR" | "LEAD_PASTOR" | "ADMIN";
+
+export const APP_ROLES: AppRole[] = ["WORKER", "PASTOR", "LEAD_PASTOR", "ADMIN"];
+
+export const ROLE_LABELS: Record<AppRole, string> = {
+  WORKER: "Worker",
+  PASTOR: "Pastor",
+  LEAD_PASTOR: "Lead Pastor",
+  ADMIN: "Admin",
+};
 
 // ─── Departments ──────────────────────────────────────────────────────────────
 export type Department =

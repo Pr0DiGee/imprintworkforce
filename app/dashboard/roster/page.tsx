@@ -5,7 +5,7 @@ import { getTargetSundayString, addWeeksToDate } from "@/lib/date";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { Roster, RosterDuty, ROSTER_DUTIES } from "@/types";
 import { RosterClient } from "./RosterClient";
-import { canEditRoster } from "@/lib/roles";
+import { can } from "@/lib/permissions";
 
 export default async function RosterPage() {
   const user = await getServerUser();
@@ -50,7 +50,7 @@ export default async function RosterPage() {
       users={users}
       stripDates={stripDates}
       currentWindowSunday={currentWindowSunday}
-      canEdit={canEditRoster(user.role)}
+      canEdit={can(user, "editRoster")}
     />
   );
 }

@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "rules:sync": "tsx scripts/sync-rules.ts",
+    "rules:check": "tsx scripts/sync-rules.ts --check",
+    "seed:dev": "tsx scripts/seed-schedule.ts"
   },
   "dependencies": {
     "@tiptap/extension-table": "^3.31.3",
@@ -47,6 +51,7 @@
     "eslint-config-next": "16.3.1",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^4.1.11"
   },

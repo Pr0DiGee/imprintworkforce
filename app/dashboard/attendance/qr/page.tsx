@@ -3,13 +3,13 @@ import { headers } from "next/headers";
 import { getServerUser } from "@/lib/server-auth";
 import { PrintButton } from "./PrintButton";
 import QRCode from "react-qr-code";
-import { canManageAttendance } from "@/lib/roles";
+import { can } from "@/lib/permissions";
 
 export default async function AttendanceQRPage() {
   const user = await getServerUser();
   if (!user) redirect("/login");
   
-  if (!canManageAttendance(user)) {
+  if (!can(user, "manageAttendance")) {
     redirect("/dashboard");
   }
 

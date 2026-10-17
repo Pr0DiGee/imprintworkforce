@@ -32,7 +32,7 @@ export function AssignTaskModal({
       .then((snap) => {
         const list = snap.docs.map(
           (d) => ({ uid: d.id, ...d.data() } as UserProfile)
-        ).filter(u => u.role !== "ADMIN" && u.role !== "SYSTEM_ADMIN");
+        ).filter(u => u.role !== "ADMIN");
         setUsers(list.sort((a, b) => a.name.localeCompare(b.name)));
         if (list.length > 0) setAssignedTo(list[0].uid);
       })

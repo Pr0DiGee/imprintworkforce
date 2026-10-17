@@ -4,7 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getServerUser } from "@/lib/server-auth";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { sendPushNotification } from "@/lib/push-notifications";
-import { canAssignTasks, canEditDevotion, canEditRoster } from "@/lib/roles";
+import { can } from "@/lib/permissions";
 import { ROSTER_DUTIES, ROSTER_DUTY_LABELS, type RosterDuty } from "@/types";
 import type { PushEvent } from "@/lib/client-notifications";
 
@@ -35,7 +35,7 @@ function formatDate(date: Date): string {
 
 async function resolveEvent(
   event: PushEvent,
-  caller: { uid: string; name: string; role: string }
+  caller: { uid: string; name: string; role: string; departments?: string[] }
 ): Promise<ResolvedPush> {
   const db = getAdminDb();
 
@@ -50,7 +50,7 @@ async function resolveEvent(
       const task = snap.data()!;
 
       if (event.type === "TASK_ASSIGNED") {
-        if (!canAssignTasks(caller.role) || task.assigned_by !== caller.uid) {
+        if (!can(caller, "assignTasks") || task.assigned_by !== caller.uid) {
           throw new Rejected("You did not assign this task");
         }
         const due = task.deadline ? ` (Due: ${formatDate((task.deadline as Timestamp).toDate())})` : "";
@@ -79,7 +79,7 @@ async function resolveEvent(
       if (!DATE_RE.test(event.serviceDate) || !ROSTER_DUTIES.includes(event.duty)) {
         throw new Rejected("Invalid roster slot", 400);
       }
-      if (!canEditRoster(caller.role)) throw new Rejected("You cannot edit the roster");
+      if (!can(caller, "editRoster")) throw new Rejected("You cannot edit the roster");
 
       const snap = await db.collection("roster").doc(`${event.serviceDate}_${event.duty}`).get();
       const slot = snap.data();
@@ -97,7 +97,7 @@ async function resolveEvent(
     case "DEVOTION_ASSIGNED":
     case "DEVOTION_NOTES_UPDATED": {
       if (!DATE_RE.test(event.date)) throw new Rejected("Invalid date", 400);
-      if (!canEditDevotion(caller.role)) throw new Rejected("You cannot edit the devotion schedule");
+      if (!can(caller, "editDevotion")) throw new Rejected("You cannot edit the devotion schedule");
 
       const snap = await db.collection("devotion").doc(event.date).get();
       const devotion = snap.data();

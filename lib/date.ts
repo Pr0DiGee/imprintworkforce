@@ -118,6 +118,25 @@ export function formatRelativeCheckInDate(dateStr: string | Date | number | null
 }
 
 /**
+ * Read a date in any shape the app may hold — ISO string, Date, Firestore
+ * Timestamp, or a serialised `{_seconds}` / `{seconds}` object.
+ * Returns null for missing or invalid values (never an "Invalid Date").
+ */
+export function toJsDate(value: unknown): Date | null {
+  if (value === null || value === undefined || value === "") return null;
+  let date: Date | null = null;
+  if (value instanceof Date) date = value;
+  else if (typeof value === "string" || typeof value === "number") date = new Date(value);
+  else if (typeof value === "object") {
+    const v = value as { toDate?: () => Date; _seconds?: number; seconds?: number };
+    if (typeof v.toDate === "function") date = v.toDate();
+    else if (typeof v._seconds === "number") date = new Date(v._seconds * 1000);
+    else if (typeof v.seconds === "number") date = new Date(v.seconds * 1000);
+  }
+  return date && !isNaN(date.getTime()) ? date : null;
+}
+
+/**
  * Today's date (YYYY-MM-DD) and whether it's Sunday, in church time (Lagos),
  * regardless of the server's timezone (Vercel runs in UTC).
  */

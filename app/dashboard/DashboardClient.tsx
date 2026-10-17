@@ -5,7 +5,7 @@ import type { UserProfile, Roster, DevotionDaily } from "@/types";
 import { ROSTER_DUTIES, ROSTER_DUTY_LABELS } from "@/types";
 import { Avatar } from "@/components/Avatar";
 import { getShortDayLabel, formatShortDate } from "@/lib/date";
-import { isPastor, isLeadPastor } from "@/lib/roles";
+import { can } from "@/lib/permissions";
 import type { DashboardStats } from "@/lib/server-data";
 import {
   FileText,
@@ -130,16 +130,16 @@ export function DashboardClient({
       {/* Stats grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
-          title={isPastor(user.role) ? "Reports" : "My Dept Report"}
+          title={can(user, "viewAllReports") ? "Reports" : "My Dept Report"}
           value={
-            isPastor(user.role)
+            can(user, "viewAllReports")
               ? `${stats.reportsSubmitted}/${stats.reportTotal}`
               : stats.reportsSubmitted === 1
                 ? "Ready"
                 : "Pending"
           }
           subtitle={
-            isPastor(user.role) ? "departments submitted" : "for this week"
+            can(user, "viewAllReports") ? "departments submitted" : "for this week"
           }
           href="/dashboard/reports"
           accentColor={
@@ -150,7 +150,7 @@ export function DashboardClient({
           icon={<FileText size={24} />}
         />
 
-        {isLeadPastor(user.role) && (
+        {can(user, "viewAllTasks") && (
           <StatCard
             title="Global Tasks"
             value={String(stats.globalTasks)}
@@ -162,12 +162,12 @@ export function DashboardClient({
         )}
 
         <StatCard
-          title={isPastor(user.role) ? "Assigned Tasks" : "My Tasks"}
+          title={can(user, "assignTasks") ? "Assigned Tasks" : "My Tasks"}
           value={String(stats.activeTasks)}
           subtitle={
             stats.overdueTasks > 0
               ? `${stats.overdueTasks} overdue`
-              : isPastor(user.role)
+              : can(user, "assignTasks")
                 ? "active tasks you assigned"
                 : "active tasks"
           }

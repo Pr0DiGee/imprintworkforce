@@ -23,14 +23,14 @@ Suggested order: A (security) → 8 → 9–11 → C (speed) → the rest.
 
 - [x] **8. "Email already in use" for an email nobody uses.** Sign-up creates the Auth account, then the Firestore profile write is denied by the rules, leaving a hidden Auth account. Admin create has no rollback either. *(Fixed: hidden account for Pastor Racheal's Gmail deleted on production (email now free); sign-up disabled; admin create-user now rolls back the login if the profile save fails)*
   Fix: align rules with the sign-up decision, roll back on failure, clean up existing orphan Auth accounts.
-- [ ] **9. Notes autosave (likely) kicks you out of the editor** after 1.5s idle and shows a "Note saved" toast. Needs browser confirmation. *(Confirmed on dev: editor closes ~1.5s after you stop typing and toasts "Note saved"; list also shows "Invalid Date" for just-saved notes)*
+- [x] **9. Notes autosave (likely) kicks you out of the editor** after 1.5s idle and shows a "Note saved" toast. Needs browser confirmation. *(Fixed: autosave is silent and keeps you in the editor ("Saved" indicator, saves on close); "Invalid Date" fixed; links/refresh reopen the folder and note)*
   Fix: separate silent autosave from the explicit Save.
-- [ ] **10. Task deadlines missing on first load.** Server serializes deadlines to ISO strings; `TaskCard`/`sortTasks` only understand Timestamp objects → no due date, no overdue badge, wrong sort. *(Confirmed on dev: no due date, no Overdue badge, unsorted)*
+- [x] **10. Task deadlines missing on first load.** Server serializes deadlines to ISO strings; `TaskCard`/`sortTasks` only understand Timestamp objects → no due date, no overdue badge, wrong sort. *(Fixed: one date format in the browser (ISO), read via toJsDate())*
 - [x] **11. Roster "Claim" always fails for workers** — rules only allow pastors to write roster. *(Fixed: Claim removed entirely; pastors assign duties)*
-- [ ] **12. 24-hour report lock is client-side only** — not enforced in `firestore.rules`.
-- [ ] **13. Role lists disagree** between `lib/roles.ts`, `firestore.rules`, `SidebarNav`, devotion page, follow-up page (ADMIN / SYSTEM_ADMIN handling).
+- [x] **12. 24-hour report lock is client-side only** — not enforced in `firestore.rules`. *(Fixed: enforced in firestore.rules for everyone, admins included; the submission time can't be reset)*
+- [x] **13. Role lists disagree** between `lib/roles.ts`, `firestore.rules`, `SidebarNav`, devotion page, follow-up page (ADMIN / SYSTEM_ADMIN handling). *(Fixed: lib/permissions.ts is the single source; rules generated from it; ADMIN super-user; all pastors see all tasks; only Lead Pastor/Admin write any report; Devotion department edits the schedule; DEVOTION_LEAD and SYSTEM_ADMIN removed)*
   Fix: single source of truth, mirrored in rules.
-- [ ] **33. Admins see no tasks.** Server treats ADMIN as a pastor (shows tasks they assigned) while the page/reload treat them as a worker; confirmed on dev. Part of #13.
+- [x] **33. Admins see no tasks.** Server treats ADMIN as a pastor (shows tasks they assigned) while the page/reload treat them as a worker; confirmed on dev. Part of #13. *(Fixed by #13)*
 - [ ] **14. Devotion notes toast "saved" even when the save failed.**
 - [x] **15. Duplicate check-ins on the same Sunday inflate `attendance_count`.** *(Fixed: one attendance record per member per Sunday)*
   Fix: one attendance doc per member per Sunday (`{memberId}_{sunday}`).
@@ -55,8 +55,8 @@ Suggested order: A (security) → 8 → 9–11 → C (speed) → the rest.
 
 ## D. Code health & handover
 
-- [ ] **25. Three timestamp formats in use** (Timestamp, `{_seconds}`, ISO string) — root cause of #10. Pick one.
-- [ ] **26. No real tests**, no `test` script, setup mocks a non-existent `ToastContext`.
+- [x] **25. Three timestamp formats in use** (Timestamp, `{_seconds}`, ISO string) — root cause of #10. Pick one. *(Fixed with #10)*
+- [ ] **26. Few real tests** *(npm test now exists and checks permissions + rules sync; setup mock fixed)*
 - [ ] **27. 124 lint problems**; delete stray `fix_profile.js`, `update_profile.js`, `scratch_script.js`.
 - [ ] **28. Duplicated `verifySession`**, route-to-route import; unused deps (`next-themes`, `html2pdf.js`, `class-variance-authority`); stale `components.json`; boilerplate README.
 - [ ] **29. Account ownership.** Email sender is `no-reply@zubby.me` (previous developer's domain?). Confirm the church owns Firebase, Vercel, Resend, GitHub; rotate secrets; set missing env vars on Vercel.

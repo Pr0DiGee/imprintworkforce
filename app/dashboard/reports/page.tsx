@@ -3,16 +3,15 @@ import { getServerUser } from "@/lib/server-auth";
 import { fetchReportsForSunday, fetchUserMap } from "@/lib/server-data";
 import { getTargetSundayString } from "@/lib/date";
 import { ReportsClient } from "./ReportsClient";
+import { can } from "@/lib/permissions";
+import { DEPARTMENTS } from "@/types";
 
 export default async function ReportsPage() {
   const user = await getServerUser();
   if (!user) redirect("/login");
 
   const currentSunday = getTargetSundayString();
-  const isLeadPastorPlus = ["LEAD_PASTOR", "ADMIN", "SYSTEM_ADMIN"].includes(user.role.toUpperCase());
-  const departments = isLeadPastorPlus 
-    ? ["CHOIR", "MEDIA", "USHERING", "DEVOTION", "BABCOCK_CAMPUS"] 
-    : (user.departments ?? []);
+  const departments = can(user, "writeAnyReport") ? DEPARTMENTS : (user.departments ?? []);
 
   // Fetch the current sunday's reports for the user's departments
   const reports = await fetchReportsForSunday(currentSunday);

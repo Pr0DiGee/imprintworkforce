@@ -19,29 +19,16 @@ import type {
   FollowUpContact,
   FollowUpLog,
 } from "@/types";
-import { isPastor, isLeadPastor } from "@/lib/roles";
+import { can } from "@/lib/permissions";
+import { DEPARTMENTS } from "@/types";
+import { toJsDate } from "@/lib/date";
+
+import { serializeData } from "@/lib/serialize";
 
 const db = () => getAdminDb();
 
-// Helper to serialize Firestore Timestamps for Client Components
-export function serializeData(data: any): any {
-  if (!data) return data;
-  if (typeof data !== 'object') return data;
-  if (data.toDate && typeof data.toDate === 'function') {
-    return data.toDate().toISOString();
-  }
-  if (data._seconds !== undefined && data._nanoseconds !== undefined) {
-    return new Date(data._seconds * 1000).toISOString();
-  }
-  if (Array.isArray(data)) {
-    return data.map(serializeData);
-  }
-  const result: any = {};
-  for (const key of Object.keys(data)) {
-    result[key] = serializeData(data[key]);
-  }
-  return result;
-}
+// Timestamps → ISO strings before data reaches Client Components
+export { serializeData };
 
 // ─── Users ─────────────────────────────────────────────────────────────────────
 
@@ -91,14 +78,9 @@ export async function fetchTasks(user: UserProfile): Promise<Task[]> {
   const col = db().collection("tasks");
   let snap;
 
-  if (isLeadPastor(user.role)) {
-    // Lead pastor sees ALL non-completed tasks
+  if (can(user, "viewAllTasks")) {
     snap = await col.get();
-  } else if (isPastor(user.role)) {
-    // Pastor sees tasks they assigned
-    snap = await col.where("assigned_by", "==", user.uid).get();
   } else {
-    // Worker sees tasks assigned to them
     snap = await col.where("assigned_to", "==", user.uid).get();
   }
 
@@ -170,14 +152,17 @@ export async function fetchDashboardStats(
   user: UserProfile,
   currentSunday: string
 ): Promise<DashboardStats> {
-  // Reports — targeted query for this Sunday only
-  const reports = await fetchReportsForSunday(currentSunday);
+  const [reports, tasks, feedback] = await Promise.all([
+    fetchReportsForSunday(currentSunday),
+    fetchTasks(user),
+    fetchFeedbackForSunday(currentSunday),
+  ]);
   let reportsSubmitted: number;
   let reportTotal: number;
 
-  if (isPastor(user.role)) {
+  if (can(user, "viewAllReports")) {
     reportsSubmitted = reports.filter((r) => r.status === "SUBMITTED").length;
-    reportTotal = 5; // DEPARTMENTS.length
+    reportTotal = DEPARTMENTS.length;
   } else {
     const userDepts = user.departments || [];
     const myReport = reports.find((r) => userDepts.includes(r.department));
@@ -185,36 +170,18 @@ export async function fetchDashboardStats(
     reportTotal = 1;
   }
 
-  // Tasks — targeted queries based on role
-  const tasks = await fetchTasks(user);
+  // "Mine" = tasks I assigned (if I can assign) or tasks assigned to me
   const now = new Date();
-  let globalTasks = 0;
-  let activeTasks = 0;
-  let overdueTasks = 0;
-
-  tasks.forEach((t) => {
-    if (t.status !== "COMPLETED") {
-      if (isLeadPastor(user.role)) {
-        globalTasks++;
-        if (t.assigned_by === user.uid) {
-          activeTasks++;
-          const dl = t.deadline ? new Date(t.deadline as unknown as string) : null;
-          if (dl && dl < now) overdueTasks++;
-        }
-      } else if (isPastor(user.role)) {
-        activeTasks++;
-        const dl = t.deadline ? new Date(t.deadline as unknown as string) : null;
-        if (dl && dl < now) overdueTasks++;
-      } else {
-        activeTasks++;
-        const dl = t.deadline ? new Date(t.deadline as unknown as string) : null;
-        if (dl && dl < now) overdueTasks++;
-      }
-    }
-  });
-
-  // Feedback — targeted query for this Sunday
-  const feedback = await fetchFeedbackForSunday(currentSunday);
+  const active = tasks.filter((t) => t.status !== "COMPLETED");
+  const mine = can(user, "assignTasks")
+    ? active.filter((t) => t.assigned_by === user.uid)
+    : active.filter((t) => t.assigned_to === user.uid);
+  const globalTasks = active.length;
+  const activeTasks = mine.length;
+  const overdueTasks = mine.filter((t) => {
+    const dl = toJsDate(t.deadline);
+    return dl !== null && dl < now;
+  }).length;
 
   return {
     reportsSubmitted,

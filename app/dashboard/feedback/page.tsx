@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerUser } from "@/lib/server-auth";
 import { fetchFeedbackForSunday, fetchUserMap } from "@/lib/server-data";
 import { getTargetSundayString } from "@/lib/date";
-import { isPastor } from "@/lib/roles";
+import { can } from "@/lib/permissions";
 import { FeedbackClient } from "./FeedbackClient";
 
 export default async function FeedbackPage() {
@@ -22,7 +22,7 @@ export default async function FeedbackPage() {
       initialMyFeedback={myFeedback}
       initialAllFeedback={allFeedback}
       usersMap={usersMap}
-      isPastor={isPastor(user.role)}
+      isPastor={can(user, "viewAllReports")}
     />
   );
 }

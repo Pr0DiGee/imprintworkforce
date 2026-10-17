@@ -5,7 +5,8 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { ReadOnlyReport } from "@/components/ReadOnlyReport";
 import { Report, Department, DEPARTMENTS, DEPARTMENT_LABELS } from "@/types";
-import { formatTargetSunday } from "@/lib/date";
+import { formatTargetSunday, toJsDate } from "@/lib/date";
+import { serializeData } from "@/lib/serialize";
 import { useRouter } from "next/navigation";
 import { WeekPicker } from "@/components/WeekPicker";
 import { Printer } from "lucide-react";
@@ -37,7 +38,7 @@ export function ReportsAllClient({
       const snap = await getDocs(
         query(collection(db, "reports"), where("target_sunday", "==", dateStr))
       );
-      setReportsList(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Report)));
+      setReportsList(snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as Report)));
       
       // Update URL without triggering a full page reload so it can be shared
       router.replace(`/dashboard/reports/all?date=${dateStr}`);
@@ -176,10 +177,8 @@ export function ReportsAllClient({
                         </h1>
                         <p style={{ color: '#6b7280', marginTop: '2px', fontStyle: 'italic', fontSize: '0.875rem' }}>
                           Date: {(() => {
-                            const ts = (report as any).submitted_at || (report as any).last_edited_at;
-                            if (ts && ts.toDate) return ts.toDate().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-                            if (ts) return new Date(ts).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-                            return new Date(report.target_sunday).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+                            const date = toJsDate(report.submitted_at) ?? toJsDate(report.last_edited_at) ?? toJsDate(report.target_sunday);
+                            return date?.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) ?? "";
                           })()}
                         </p>
                       </div>

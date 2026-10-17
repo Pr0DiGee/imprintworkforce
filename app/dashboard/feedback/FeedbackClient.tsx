@@ -4,7 +4,8 @@ import { useState, FormEvent, useCallback } from "react";
 import { doc, getDoc, getDocs, collection, query, where, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { Feedback, UserProfile } from "@/types";
-import { formatTargetSunday } from "@/lib/date";
+import { formatTargetSunday, toJsDate } from "@/lib/date";
+import { serializeData } from "@/lib/serialize";
 import { WeekPicker } from "@/components/WeekPicker";
 import { Avatar } from "@/components/Avatar";
 import { toast } from "sonner";
@@ -43,7 +44,7 @@ export function FeedbackClient({
       const mySnap = await getDoc(doc(db, "feedback", myDocId)).catch(() => null);
       
       if (mySnap?.exists()) {
-        const data = { id: mySnap.id, ...mySnap.data() } as Feedback;
+        const data = { id: mySnap.id, ...serializeData(mySnap.data()) } as Feedback;
         setMyFeedback(data);
         setDraft(data.content);
       } else {
@@ -55,7 +56,7 @@ export function FeedbackClient({
         query(collection(db, "feedback"), where("service_date", "==", dateStr))
       );
       
-      setAllFeedback(allSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Feedback)));
+      setAllFeedback(allSnap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as Feedback)));
     } catch (err) {
       console.error(err);
     } finally {
@@ -113,15 +114,8 @@ export function FeedbackClient({
   const isEdit = Boolean(myFeedback);
   
   const sortedFeedback = [...allFeedback].sort((a, b) => {
-    // Handle both client Timestamps and server Timestamps gracefully for sorting
-    const getMs = (ts: any) => {
-      if (!ts) return 0;
-      if (ts.toMillis) return ts.toMillis();
-      if (ts._seconds) return ts._seconds * 1000;
-      if (ts.getTime) return ts.getTime();
-      return 0;
-    };
-    
+    const getMs = (ts: unknown) => toJsDate(ts)?.getTime() ?? 0;
+
     const aTime = getMs(a.updated_at) || getMs(a.submitted_at);
     const bTime = getMs(b.updated_at) || getMs(b.submitted_at);
     return bTime - aTime;
@@ -249,18 +243,12 @@ export function FeedbackClient({
             {sortedFeedback.map((entry) => {
               const name = usersMap[entry.user_id] ?? "Unknown";
               const ts = entry.updated_at ?? entry.submitted_at;
-              const timeStr = ts?.toDate
-                ? ts.toDate().toLocaleString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : (ts as unknown as { _seconds?: number })?._seconds 
-                  ? new Date((ts as unknown as { _seconds: number })._seconds * 1000).toLocaleString("en-GB", {
-                      day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
-                    })
-                  : "";
+              const timeStr = toJsDate(ts)?.toLocaleString("en-GB", {
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              }) ?? "";
 
               return (
                 <div

@@ -15,25 +15,45 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(uid())).data;
     }
 
-    function isLeadPastor() {
-      return isAuth() && userDoc().role == 'LEAD_PASTOR';
-    }
-
-    function isAdmin() {
-      return isAuth() && userDoc().role in ['ADMIN', 'admin', 'SYSTEM_ADMIN'];
-    }
-
-    function isPastorPlus() {
-      return isAuth() && userDoc().role in ['PASTOR', 'LEAD_PASTOR', 'ADMIN', 'admin', 'SYSTEM_ADMIN'];
-    }
-
-    function canEditDevotion() {
-      return isAuth() && userDoc().role in ['DEVOTION_LEAD', 'PASTOR', 'LEAD_PASTOR', 'ADMIN'];
-    }
-
     function userDepartments() {
       return userDoc().get('departments', []);
     }
+
+    function hasPermission(roles, departments) {
+      return isAuth()
+        && (userDoc().get('role', '') in roles || userDepartments().hasAny(departments));
+    }
+
+    // <generated:permissions>
+    // Generated from lib/permissions.ts by `npm run rules:sync`. Do not edit by hand.
+    function canManageUsers() {
+      return hasPermission(['ADMIN'], []);
+    }
+    function canViewAllReports() {
+      return hasPermission(['PASTOR', 'LEAD_PASTOR', 'ADMIN'], []);
+    }
+    function canWriteAnyReport() {
+      return hasPermission(['LEAD_PASTOR', 'ADMIN'], []);
+    }
+    function canViewAllTasks() {
+      return hasPermission(['PASTOR', 'LEAD_PASTOR', 'ADMIN'], []);
+    }
+    function canAssignTasks() {
+      return hasPermission(['PASTOR', 'LEAD_PASTOR', 'ADMIN'], []);
+    }
+    function canEditRoster() {
+      return hasPermission(['PASTOR', 'LEAD_PASTOR', 'ADMIN'], []);
+    }
+    function canEditDevotion() {
+      return hasPermission(['PASTOR', 'LEAD_PASTOR', 'ADMIN'], ['DEVOTION']);
+    }
+    function canManageAttendance() {
+      return hasPermission(['PASTOR', 'LEAD_PASTOR', 'ADMIN'], ['USHERING']);
+    }
+    function canManageAllFollowUps() {
+      return hasPermission(['PASTOR', 'LEAD_PASTOR', 'ADMIN'], []);
+    }
+    // </generated:permissions>
 
     // ─── Users ─────────────────────────────────────────────────────────
     match /users/{userId} {
@@ -43,36 +63,52 @@ service cloud.firestore {
       // Only admins write user profiles from the browser. Users change their own
       // name, photo, email and password through server routes (Admin SDK), so they
       // can never touch their own role or departments.
-      allow write: if isAuth() && userDoc().role == 'ADMIN';
+      allow write: if canManageUsers();
     }
 
     // ─── Reports ───────────────────────────────────────────────────────
+    // Report ID format: DEPARTMENT_YYYY-MM-DD
+
+    function canWriteReportFor(department) {
+      return canWriteAnyReport() || department in userDepartments();
+    }
+
+    // 24 hours after submission a report is final for EVERYONE, admins included
+    // (the admin catch-all below skips this collection). Keep in sync with
+    // REPORT_EDIT_WINDOW_MS in app/dashboard/reports/ReportsClient.tsx.
+    function reportLocked() {
+      return resource.data.get('status', '') == 'SUBMITTED'
+        && resource.data.get('submitted_at', null) is timestamp
+        && request.time > resource.data.submitted_at + duration.value(24, 'h');
+    }
+
     match /reports/{reportId} {
-      // Any authenticated user can read reports
       allow read: if isAuth();
 
-      // Pastors can write any report
-      allow write: if isPastorPlus();
+      allow create: if canWriteReportFor(request.resource.data.department)
+        && reportId == request.resource.data.department + '_' + request.resource.data.target_sunday;
 
-      // Workers can only write reports for their own department
-      // Report ID format: DEPARTMENT_YYYY-MM-DD
-      allow create, update: if isAuth()
-                            && resource == null
-                               ? request.resource.data.department in userDepartments()
-                               : resource.data.department in userDepartments();
+      // Department, date and submission time can't be changed (no resetting the clock)
+      allow update: if !reportLocked()
+        && canWriteReportFor(resource.data.department)
+        && request.resource.data.department == resource.data.department
+        && request.resource.data.target_sunday == resource.data.target_sunday
+        && (resource.data.get('submitted_at', null) == null
+            || request.resource.data.get('submitted_at', null) == resource.data.submitted_at);
+
+      allow delete: if false;
     }
 
     // ─── Tasks ─────────────────────────────────────────────────────────
     match /tasks/{taskId} {
-      // Pastors can read all tasks; workers can read tasks assigned to them
-      allow read: if isPastorPlus()
+      // Everyone sees tasks assigned to them; some roles see all tasks
+      allow read: if canViewAllTasks()
                   || (isAuth() && resource.data.assigned_to == uid());
 
-      // Pastors can create and delete tasks
-      allow create, delete: if isPastorPlus();
+      allow create, delete: if canAssignTasks();
 
-      // Pastors can update any task; assignee can only update the status field
-      allow update: if isPastorPlus()
+      // Assigners can update any task; the assignee can only change the status
+      allow update: if canAssignTasks()
                     || (isAuth()
                         && resource.data.assigned_to == uid()
                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
@@ -83,8 +119,7 @@ service cloud.firestore {
       // Any authenticated user can read roster
       allow read: if isAuth();
 
-      // Only pastors can write roster assignments
-      allow write: if isPastorPlus();
+      allow write: if canEditRoster();
     }
 
     // ─── Devotion ──────────────────────────────────────────────────────
@@ -92,7 +127,6 @@ service cloud.firestore {
       // Any authenticated user can read devotion schedule
       allow read: if isAuth();
 
-      // Only devotion leads and pastors can write
       allow write: if canEditDevotion();
     }
 
@@ -110,14 +144,14 @@ service cloud.firestore {
     // ─── Congregation & Attendance ─────────────────────────────────────
     // Check-in and member edits go through server code (Admin SDK), which
     // bypasses these rules. Browsers can't write these collections (apart from
-    // the admin catch-all at the bottom), and only pastors can read them directly.
+    // the admin catch-all at the bottom).
     match /congregation/{memberId} {
-      allow read: if isPastorPlus();
+      allow read: if canManageAttendance();
       allow write: if false;
     }
 
     match /attendance/{recordId} {
-      allow read: if isPastorPlus();
+      allow read: if canManageAttendance();
       allow write: if false;
     }
 
@@ -144,8 +178,8 @@ service cloud.firestore {
       allow read: if isAuth();
       // Any authenticated user can create a contact
       allow create: if isAuth();
-      // Users can only update or delete contacts they are assigned to (or pastors)
-      allow update, delete: if isAuth() && (resource.data.assigned_to == uid() || isPastorPlus());
+      // Users can only update or delete contacts assigned to them (unless allowed to manage all)
+      allow update, delete: if isAuth() && (resource.data.assigned_to == uid() || canManageAllFollowUps());
     }
 
     match /followup_logs/{logId} {
@@ -156,9 +190,10 @@ service cloud.firestore {
       allow update, delete: if isAuth() && resource.data.worker_id == uid();
     }
 
-    // Global admin override (optional catch-all if needed, but functions above handle it)
-    match /{document=**} {
-      allow read, write: if isAdmin();
+    // Admin super-user: full access everywhere except reports, whose 24-hour
+    // lock must hold for everyone (admins write reports via the rules above).
+    match /{collection}/{document=**} {
+      allow read, write: if canManageUsers() && collection != 'reports';
     }
   }
 }

@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/server-auth";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 import { FieldValue } from "firebase-admin/firestore";
+import { can } from "@/lib/permissions";
+import { APP_ROLES, DEPARTMENTS, type AppRole, type Department } from "@/types";
+
+const validRole = (role: unknown): role is AppRole => APP_ROLES.includes(role as AppRole);
+const validDepartments = (d: unknown): d is Department[] =>
+  d === undefined || (Array.isArray(d) && d.every((x) => DEPARTMENTS.includes(x)));
 
 export async function POST(req: NextRequest) {
   try {
     const adminUser = await getServerUser();
-    if (!adminUser || adminUser.role !== "ADMIN") {
+    if (!adminUser || !can(adminUser, "manageUsers")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -14,6 +20,9 @@ export async function POST(req: NextRequest) {
 
     if (!name || !email || !password || !role) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+    if (!validRole(role) || !validDepartments(departments)) {
+      return NextResponse.json({ error: "Invalid role or department" }, { status: 400 });
     }
 
     const auth = getAdminAuth();
@@ -57,7 +66,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const adminUser = await getServerUser();
-    if (!adminUser || adminUser.role !== "ADMIN") {
+    if (!adminUser || !can(adminUser, "manageUsers")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -65,6 +74,9 @@ export async function PATCH(req: NextRequest) {
 
     if (!uid || !role) {
       return NextResponse.json({ error: "Missing required fields (uid, role)" }, { status: 400 });
+    }
+    if (!validRole(role) || !validDepartments(departments)) {
+      return NextResponse.json({ error: "Invalid role or department" }, { status: 400 });
     }
 
     const db = getAdminDb();
@@ -89,7 +101,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const adminUser = await getServerUser();
-    if (!adminUser || adminUser.role !== 'ADMIN') {
+    if (!adminUser || !can(adminUser, "manageUsers")) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

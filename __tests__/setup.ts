@@ -11,12 +11,3 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "",
   redirect: vi.fn(),
 }));
-
-// Mock Toast context to prevent rendering issues in tests
-vi.mock("@/context/ToastContext", () => ({
-  useToast: () => ({
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-  }),
-}));

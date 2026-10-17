@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { UserProfile, DEPARTMENT_LABELS } from "@/types";
+import { UserProfile, DEPARTMENT_LABELS, ROLE_LABELS } from "@/types";
 import { updateProfile } from "./actions";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/context/AuthContext";
@@ -189,7 +189,7 @@ export function ProfileForm({ user }: { user: UserProfile }) {
               Role
             </label>
             <div className="px-4 py-2.5 rounded-lg text-sm bg-[var(--bg-muted)] border border-[var(--border-primary)] text-[var(--text-secondary)] capitalize">
-              {user.role === "DEVOTION_LEAD" ? "Devotion Team" : user.role.replace("_", " ").toLowerCase()}
+              {ROLE_LABELS[user.role] ?? user.role}
             </div>
           </div>
           <div>

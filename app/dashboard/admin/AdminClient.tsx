@@ -7,21 +7,14 @@ import {
   Department,
   DEPARTMENTS,
   DEPARTMENT_LABELS,
+  APP_ROLES,
+  ROLE_LABELS,
 } from "@/types";
 import { toast } from "sonner";
 import { Avatar } from "@/components/Avatar";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
-const ALL_ROLES: AppRole[] = ["WORKER", "PASTOR", "LEAD_PASTOR", "DEVOTION_LEAD", "ADMIN"];
-
-const ROLE_LABELS: Record<AppRole, string> = {
-  WORKER: "Worker",
-  PASTOR: "Pastor",
-  LEAD_PASTOR: "Lead Pastor",
-  DEVOTION_LEAD: "Devotion Team",
-  ADMIN: "Admin",
-  SYSTEM_ADMIN: "System Admin",
-};
+const ALL_ROLES = APP_ROLES;
 
 interface AdminClientProps {
   user: UserProfile;
@@ -115,8 +108,6 @@ export function AdminClient({ user: currentUser, initialUsers }: AdminClientProp
         return { background: "var(--accent-subtle)", color: "var(--accent-text)", border: "1px solid var(--accent)" };
       case "PASTOR":
         return { background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--border-primary)" };
-      case "DEVOTION_LEAD":
-        return { background: "var(--warning-subtle)", color: "var(--warning)", border: "1px solid var(--warning)" };
       case "WORKER":
         return { background: "var(--bg-input)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" };
     }

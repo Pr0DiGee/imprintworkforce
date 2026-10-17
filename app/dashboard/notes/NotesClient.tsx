@@ -14,6 +14,8 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
+import { toJsDate } from "@/lib/date";
+import { serializeData } from "@/lib/serialize";
 import { toast } from "sonner";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -59,18 +61,25 @@ interface NotesClientProps {
 
 // ─── Note Editor ────────────────────────────────────────────────────────────────
 
+const AUTOSAVE_DELAY_MS = 1500;
+
 function NoteEditor({
   note,
   onSave,
+  onAutoSave,
   onCancel,
   saving,
 }: {
   note: Note | null;
+  /** Explicit "Save Note": saves and closes the editor */
   onSave: (title: string, content: string) => void;
+  /** Background save while typing: must not close the editor or toast */
+  onAutoSave: (title: string, content: string) => Promise<void>;
   onCancel: () => void;
   saving: boolean;
 }) {
   const [title, setTitle] = useState(note?.title || "");
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "pending" | "saving" | "saved" | "error">("idle");
 
   const getInitial = () => {
     if (!note?.content) return "";
@@ -93,52 +102,78 @@ function NoteEditor({
     },
   });
 
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Autosave (existing notes only). Latest title/callback live in refs so the
+  // listeners are set up once and re-renders never trigger an early save.
+  const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const titleRef = useRef(title);
+  const onAutoSaveRef = useRef(onAutoSave);
+  useEffect(() => {
+    titleRef.current = title;
+    onAutoSaveRef.current = onAutoSave;
+  });
+
+  const flushAutoSave = useCallback(() => {
+    if (!autoSaveTimeoutRef.current || !editor || !titleRef.current.trim()) return;
+    clearTimeout(autoSaveTimeoutRef.current);
+    autoSaveTimeoutRef.current = null;
+    setAutoSaveStatus("saving");
+    onAutoSaveRef.current(titleRef.current, JSON.stringify(editor.getJSON()))
+      .then(() => setAutoSaveStatus("saved"))
+      .catch(() => setAutoSaveStatus("error"));
+  }, [editor]);
+
+  const scheduleAutoSave = useCallback(() => {
+    if (!note) return;
+    if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+    setAutoSaveStatus("pending");
+    autoSaveTimeoutRef.current = setTimeout(flushAutoSave, AUTOSAVE_DELAY_MS);
+  }, [note, flushAutoSave]);
 
   useEffect(() => {
-    if (!editor || !note) return; // Only auto-save existing notes
-    const handleUpdate = () => {
-      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
-      autoSaveTimeoutRef.current = setTimeout(() => {
-        onSave(title, JSON.stringify(editor.getJSON()));
-        autoSaveTimeoutRef.current = null;
-      }, 1500);
-    };
-    
+    if (!editor || !note) return;
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (autoSaveTimeoutRef.current) {
-        e.preventDefault();
-        e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
-      }
+      if (autoSaveTimeoutRef.current) e.preventDefault();
     };
-
-    editor.on('update', handleUpdate);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
+    editor.on("update", scheduleAutoSave);
+    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      editor.off('update', handleUpdate);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-        onSave(title, JSON.stringify(editor.getJSON()));
-      }
+      editor.off("update", scheduleAutoSave);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      flushAutoSave(); // leaving the editor: save anything still pending, quietly
     };
-  }, [editor, title, onSave, note]);
+  }, [editor, note, scheduleAutoSave, flushAutoSave]);
 
   if (!editor) return null;
 
   return (
     <div className="flex flex-col h-full">
       {/* Title input */}
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Note title…"
-        className="text-xl font-bold px-5 py-4 border-none focus:outline-none bg-transparent w-full"
-        style={{ color: "var(--text-primary)" }}
-        autoFocus
-      />
+      <div className="flex items-center gap-3 pr-5">
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            scheduleAutoSave();
+          }}
+          placeholder="Note title…"
+          className="text-xl font-bold px-5 py-4 border-none focus:outline-none bg-transparent w-full"
+          style={{ color: "var(--text-primary)" }}
+          autoFocus
+        />
+        {note && autoSaveStatus !== "idle" && (
+          <span
+            className="text-xs whitespace-nowrap"
+            role="status"
+            style={{ color: autoSaveStatus === "error" ? "var(--danger)" : "var(--text-muted)" }}
+          >
+            {autoSaveStatus === "pending" && "Unsaved changes"}
+            {autoSaveStatus === "saving" && "Saving…"}
+            {autoSaveStatus === "saved" && "Saved"}
+            {autoSaveStatus === "error" && "Couldn't save"}
+          </span>
+        )}
+      </div>
 
       {/* Toolbar */}
       <div
@@ -219,7 +254,7 @@ function NoteEditor({
         }}
       >
         <button type="button" onClick={onCancel} disabled={saving} className="px-4 py-2 text-sm font-medium rounded-md transition-colors">
-          Cancel
+          {note ? "Close" : "Cancel"}
         </button>
         <button
           type="button"
@@ -281,24 +316,6 @@ export function NotesClient({
 
   
   // ── URL State Sync ─────────────────────────────────────────────────────────────
-  const didRestoreUrl = useRef(false);
-  useEffect(() => {
-    if (didRestoreUrl.current) return;
-    const params = new URLSearchParams(window.location.search);
-    const folderId = params.get("folder");
-    const noteId = params.get("note");
-    
-    if (folderId) {
-      const folder = displayFolders.find(f => f.id === folderId);
-      if (folder) {
-        setActiveFolder(folder);
-        setView(noteId ? "editor" : "notes");
-        didRestoreUrl.current = true;
-      }
-    } else {
-      didRestoreUrl.current = true;
-    }
-  }, [displayFolders]); // Run once folders load
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -418,13 +435,14 @@ export function NotesClient({
             orderBy("updated_at", "desc")
           )
         );
-        setNotes(
-          snap.docs.map(
-            (d) => ({ id: d.id, ...d.data() } as Note)
-          )
+        const list = snap.docs.map(
+          (d) => ({ id: d.id, ...serializeData(d.data()) } as Note)
         );
+        setNotes(list);
+        return list;
       } catch {
         toast.error("Failed to load notes");
+        return [];
       } finally {
         setFetchingNotes(false);
       }
@@ -432,22 +450,47 @@ export function NotesClient({
     [user.uid]
   );
 
+  // Reopen the folder (and note) named in the URL, e.g. after a refresh,
+  // loading its notes the same way a click would.
+  // Captured on first render, before the URL-sync effect rewrites the address
+  const [initialSearch] = useState(() => (typeof window === "undefined" ? "" : window.location.search));
+  const didRestoreUrl = useRef(false);
+  useEffect(() => {
+    if (didRestoreUrl.current) return;
+    didRestoreUrl.current = true;
+    const params = new URLSearchParams(initialSearch);
+    const folder = displayFolders.find((f) => f.id === params.get("folder"));
+    if (!folder) return;
+    const noteId = params.get("note");
+    openFolder(folder).then((list) => {
+      const note = noteId ? list.find((n) => n.id === noteId) : undefined;
+      if (note) {
+        setActiveNote(note);
+        setIsNewNote(false);
+        setView("editor");
+      }
+    });
+  }, [displayFolders, openFolder, initialSearch]);
+
   const handleSaveNote = async (title: string, content: string) => {
     if (!activeFolder) return;
     setSaving(true);
     try {
       if (isNewNote) {
         const ref = doc(collection(db, "notes"));
-        const note: Omit<Note, "id"> = {
+        await setDoc(ref, {
           user_id: user.uid,
           folder_id: activeFolder.id!,
           title: title.trim(),
           content,
-          created_at: serverTimestamp() as any,
-          updated_at: serverTimestamp() as any,
-        };
-        await setDoc(ref, note);
-        setNotes((prev) => [{ id: ref.id, ...note } as Note, ...prev]);
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp(),
+        });
+        const now = new Date().toISOString();
+        setNotes((prev) => [
+          { id: ref.id, user_id: user.uid, folder_id: activeFolder.id!, title: title.trim(), content, created_at: now, updated_at: now } as unknown as Note,
+          ...prev,
+        ]);
         setNoteCounts((prev) => ({
           ...prev,
           [activeFolder.id!]: (prev[activeFolder.id!] || 0) + 1,
@@ -461,7 +504,7 @@ export function NotesClient({
         setNotes((prev) =>
           prev.map((n) =>
             n.id === activeNote.id
-              ? { ...n, title: title.trim(), content }
+              ? ({ ...n, title: title.trim(), content, updated_at: new Date().toISOString() } as unknown as Note)
               : n
           )
         );
@@ -475,6 +518,23 @@ export function NotesClient({
     } finally {
       setSaving(false);
     }
+  };
+
+  // Background save while typing in an existing note: no toast, editor stays open
+  const handleAutoSaveNote = async (title: string, content: string) => {
+    const note = activeNote;
+    if (!note?.id || !title.trim()) return;
+    await setDoc(
+      doc(db, "notes", note.id),
+      { title: title.trim(), content, updated_at: serverTimestamp() },
+      { merge: true }
+    );
+    const updatedAt = new Date().toISOString();
+    setNotes((prev) =>
+      prev.map((n) =>
+        n.id === note.id ? ({ ...n, title: title.trim(), content, updated_at: updatedAt } as unknown as Note) : n
+      )
+    );
   };
 
   const handleDeleteNote = async (note: Note) => {
@@ -497,24 +557,12 @@ export function NotesClient({
 
   // ── Helpers ───────────────────────────────────────────────────────────────────
 
-  const formatDate = (ts: any) => {
-    if (!ts) return "";
-    try {
-      const date =
-        typeof ts === "string"
-          ? new Date(ts)
-          : ts.toDate
-            ? ts.toDate()
-            : new Date(ts.seconds * 1000);
-      return date.toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
-    } catch {
-      return "";
-    }
-  };
+  const formatDate = (ts: unknown) =>
+    toJsDate(ts)?.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }) ?? "";
 
   const getPreview = (content: string): string => {
     try {
@@ -559,6 +607,7 @@ export function NotesClient({
           <NoteEditor
             note={isNewNote ? null : activeNote}
             onSave={handleSaveNote}
+            onAutoSave={handleAutoSaveNote}
             onCancel={() => {
               setView("notes");
               setActiveNote(null);
