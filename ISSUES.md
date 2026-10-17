@@ -13,9 +13,9 @@ Suggested order: A (security) → 8 → 9–11 → C (speed) → the rest.
   Fix: return only enough to confirm identity (first name), nothing else.
 - [x] **4. Anyone can overwrite congregation records.** `processCheckIn` trusts a member `id` from the browser; Firestore rules allow unauthenticated `create`/`update` on `congregation` and `create` on `attendance`. *(Fixed: browsers can't write congregation/attendance; existing members are never edited from check-in, ushers edit from Attendance. Rules deployed to dev and production)*
   Fix: close those rules (check-in uses the Admin SDK) and validate the id server-side.
-- [ ] **5. Department self-escalation.** Users can edit the legacy `department` field on their own profile, and the rules fall back to it in `userDepartments()`. *(Fixed in code: rules read only `departments`; users can't write their own profile from the browser at all. Tested on dev. Production: remove the old field from users + deploy rules)*
+- [x] **5. Department self-escalation.** Users can edit the legacy `department` field on their own profile, and the rules fall back to it in `userDepartments()`. *(Fixed: rules read only `departments`; users can't write their own profile from the browser. Old field removed from all users; rules live on dev and production)*
   Fix: block the field in rules, then drop the fallback.
-- [ ] **6. Public self sign-up on `/login`.** Decide whether accounts should only be created by admins. *(Create Account removed from /login. Also turn off sign-up in Firebase console → Authentication → Settings → User actions (dev + prod))*
+- [x] **6. Public self sign-up on `/login`.** Decide whether accounts should only be created by admins. *(Create Account removed from /login. Also turn off sign-up in Firebase console → Authentication → Settings → User actions (dev + prod))* *(Fixed: Create Account removed from /login; sign-up disabled in Firebase on dev and production)*
 - [x] **7. Seeded accounts may use `changeme123`.** If `scripts/seed-schedule.ts` ran against production, ~15 accounts plus `admin@imprint.local` share that password. *(Won't fix: account owners will change their own passwords)*
   Fix: check, then reset or remove.
 
