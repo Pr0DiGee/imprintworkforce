@@ -11,7 +11,7 @@ Suggested order: A (security) → 8 → 9–11 → C (speed) → the rest.
   Fix: decide recipients and text on the server from the action that happened.
 - [x] **3. Public check-in phone lookup leaks PII** (`lookupByPhone` in `app/checkin/actions.ts` returns name, email, birthday, address to anyone). *(Fixed: check-in redesigned; only the first name is ever shown)*
   Fix: return only enough to confirm identity (first name), nothing else.
-- [x] **4. Anyone can overwrite congregation records.** `processCheckIn` trusts a member `id` from the browser; Firestore rules allow unauthenticated `create`/`update` on `congregation` and `create` on `attendance`. *(Fixed: browsers can't write congregation/attendance; existing members are never edited from check-in, ushers edit from Attendance. Rules deployed to dev; production rules still to deploy)*
+- [x] **4. Anyone can overwrite congregation records.** `processCheckIn` trusts a member `id` from the browser; Firestore rules allow unauthenticated `create`/`update` on `congregation` and `create` on `attendance`. *(Fixed: browsers can't write congregation/attendance; existing members are never edited from check-in, ushers edit from Attendance. Rules deployed to dev and production)*
   Fix: close those rules (check-in uses the Admin SDK) and validate the id server-side.
 - [ ] **5. Department self-escalation.** Users can edit the legacy `department` field on their own profile, and the rules fall back to it in `userDepartments()`.
   Fix: block the field in rules, then drop the fallback.
