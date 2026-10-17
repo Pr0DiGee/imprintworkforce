@@ -21,15 +21,16 @@ Suggested order: A (security) → 8 → 9–11 → C (speed) → the rest.
 
 ## B. Bugs
 
-- [ ] **8. "Email already in use" for an email nobody uses.** Sign-up creates the Auth account, then the Firestore profile write is denied by the rules, leaving a hidden Auth account. Admin create has no rollback either.
+- [x] **8. "Email already in use" for an email nobody uses.** Sign-up creates the Auth account, then the Firestore profile write is denied by the rules, leaving a hidden Auth account. Admin create has no rollback either. *(Fixed: hidden account for Pastor Racheal's Gmail deleted on production (email now free); sign-up disabled; admin create-user now rolls back the login if the profile save fails)*
   Fix: align rules with the sign-up decision, roll back on failure, clean up existing orphan Auth accounts.
-- [ ] **9. Notes autosave (likely) kicks you out of the editor** after 1.5s idle and shows a "Note saved" toast. Needs browser confirmation.
+- [ ] **9. Notes autosave (likely) kicks you out of the editor** after 1.5s idle and shows a "Note saved" toast. Needs browser confirmation. *(Confirmed on dev: editor closes ~1.5s after you stop typing and toasts "Note saved"; list also shows "Invalid Date" for just-saved notes)*
   Fix: separate silent autosave from the explicit Save.
-- [ ] **10. Task deadlines missing on first load.** Server serializes deadlines to ISO strings; `TaskCard`/`sortTasks` only understand Timestamp objects → no due date, no overdue badge, wrong sort.
-- [ ] **11. Roster "Claim" always fails for workers** — rules only allow pastors to write roster.
+- [ ] **10. Task deadlines missing on first load.** Server serializes deadlines to ISO strings; `TaskCard`/`sortTasks` only understand Timestamp objects → no due date, no overdue badge, wrong sort. *(Confirmed on dev: no due date, no Overdue badge, unsorted)*
+- [x] **11. Roster "Claim" always fails for workers** — rules only allow pastors to write roster. *(Fixed: Claim removed entirely; pastors assign duties)*
 - [ ] **12. 24-hour report lock is client-side only** — not enforced in `firestore.rules`.
 - [ ] **13. Role lists disagree** between `lib/roles.ts`, `firestore.rules`, `SidebarNav`, devotion page, follow-up page (ADMIN / SYSTEM_ADMIN handling).
   Fix: single source of truth, mirrored in rules.
+- [ ] **33. Admins see no tasks.** Server treats ADMIN as a pastor (shows tasks they assigned) while the page/reload treat them as a worker; confirmed on dev. Part of #13.
 - [ ] **14. Devotion notes toast "saved" even when the save failed.**
 - [x] **15. Duplicate check-ins on the same Sunday inflate `attendance_count`.** *(Fixed: one attendance record per member per Sunday)*
   Fix: one attendance doc per member per Sunday (`{memberId}_{sunday}`).

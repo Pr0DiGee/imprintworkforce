@@ -26,15 +26,23 @@ export async function POST(req: NextRequest) {
       displayName: name,
     });
 
-    // Create user profile in Firestore
-    await db.collection("users").doc(userRecord.uid).set({
-      uid: userRecord.uid,
-      name,
-      email,
-      role,
-      departments: departments || [],
-      created_at: FieldValue.serverTimestamp(),
-    });
+    // Create user profile in Firestore; if that fails, remove the login account
+    // again so it doesn't linger without a profile and block the email address
+    try {
+      await db.collection("users").doc(userRecord.uid).set({
+        uid: userRecord.uid,
+        name,
+        email,
+        role,
+        departments: departments || [],
+        created_at: FieldValue.serverTimestamp(),
+      });
+    } catch (profileError) {
+      await auth.deleteUser(userRecord.uid).catch((cleanupError) =>
+        console.error("[POST /api/admin/users] Rollback failed for", userRecord.uid, cleanupError)
+      );
+      throw profileError;
+    }
 
     return NextResponse.json({ success: true, uid: userRecord.uid });
   } catch (error: any) {

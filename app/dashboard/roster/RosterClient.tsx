@@ -41,7 +41,6 @@ export function RosterClient({
 
   const isPast = targetSunday < currentWindowSunday;
   const canEdit = hasEditRole && !isPast;
-  const isWorker = user.role === "WORKER" && !isPast;
 
   const rosterUsers = users.filter(u => 
     !(u.departments || []).includes("DEVOTION") && 
@@ -55,10 +54,6 @@ export function RosterClient({
 
   const currentSlots = allSlots[targetSunday] || {};
   const assignedCount = ROSTER_DUTIES.filter((d) => currentSlots[d]?.assigned_to).length;
-  
-  const hasClaimedSlot = Object.values(currentSlots).some(
-    (slot) => slot?.assigned_to === user.uid
-  );
 
   function startEdit() {
     setSelections(
@@ -114,33 +109,6 @@ export function RosterClient({
       }
     } catch (err) {
       toast.error("Failed to save roster.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleClaim(duty: RosterDuty) {
-    if (!user || isPast) return;
-    setSaving(true);
-    try {
-      await setDoc(doc(db, "roster", `${targetSunday}_${duty}`), {
-        service_date: targetSunday,
-        duty,
-        assigned_to: user.uid,
-        assigned_by: user.uid,
-        created_at: serverTimestamp(),
-      });
-
-      const snap = await getDoc(doc(db, "roster", `${targetSunday}_${duty}`));
-      
-      setAllSlots(prev => {
-        const updatedSunday = { ...prev[targetSunday], [duty]: { id: snap.id, ...snap.data() } as Roster };
-        return { ...prev, [targetSunday]: updatedSunday };
-      });
-      
-      toast.success(`You have claimed ${ROSTER_DUTY_LABELS[duty]}`);
-    } catch (err) {
-      toast.error("Failed to claim duty.");
     } finally {
       setSaving(false);
     }
@@ -251,18 +219,7 @@ export function RosterClient({
                       </div>
                     ) : (
                       <span className="text-sm italic" style={{ color: "var(--text-muted)" }}>— unassigned —</span>
-                    )}
-
-                    {isWorker && isUnassigned && !hasClaimedSlot && !saving && (
-                      <button
-                        onClick={() => handleClaim(duty)}
-                        className="px-2 py-1 text-xs font-semibold rounded-md no-print"
-                        style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}
-                      >
-                        Claim
-                      </button>
-                    )}
-                  </div>
+                    )}                  </div>
                 )}
               </div>
             );
