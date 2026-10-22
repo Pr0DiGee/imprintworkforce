@@ -13,7 +13,6 @@ export default async function AdminPage() {
   }
 
   const users = await fetchAllUsers();
-  users.sort((a, b) => a.name.localeCompare(b.name));
 
   return <AdminClient user={user} initialUsers={users} />;
 }

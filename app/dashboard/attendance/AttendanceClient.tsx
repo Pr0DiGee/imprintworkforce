@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CongregationMember, AttendanceRecord } from "@/types";
+import { CongregationMember } from "@/types";
 import { formatTargetSunday, addWeeksToDate, getTargetSundayString } from "@/lib/sunday";
 import Link from "next/link";
 import { Users, Search, QrCode, Filter, ChevronLeft, ChevronRight, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
-import { updateMember } from "./actions";
+import { updateMember, loadMemberPage, findMembers } from "./actions";
 
 const fieldClass = "w-full px-3 py-2 rounded-md border text-sm";
 const fieldStyle = { background: "var(--bg-input)", borderColor: "var(--border-primary)", color: "var(--text-primary)" };
 
-function EditMemberModal({ member, onClose }: { member: CongregationMember; onClose: () => void }) {
+function EditMemberModal({ member, onClose, onSaved }: { member: CongregationMember; onClose: () => void; onSaved: (m: CongregationMember) => void }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -21,13 +21,16 @@ function EditMemberModal({ member, onClose }: { member: CongregationMember; onCl
     e.preventDefault();
     setSaving(true);
     setError("");
-    const res = await updateMember(member.id!, new FormData(e.currentTarget));
+    const form = new FormData(e.currentTarget);
+    const res = await updateMember(member.id!, form);
     setSaving(false);
     if ("error" in res) {
       setError(res.error);
       return;
     }
     toast.success("Member details updated");
+    const field = (k: string) => String(form.get(k) ?? "").trim();
+    onSaved({ ...member, name: field("name"), phone: field("phone"), email: field("email") || undefined, birthday: field("birthday") || undefined, address: field("address") || undefined });
     onClose();
     router.refresh();
   }
@@ -76,18 +79,67 @@ function EditMemberModal({ member, onClose }: { member: CongregationMember; onCl
 }
 
 interface AttendanceClientProps {
-  members: CongregationMember[];
-  todayAttendance: AttendanceRecord[];
+  /** Members who checked in on currentSunday */
+  checkedIn: CongregationMember[];
+  totalMembers: number;
   currentSunday: string;
 }
 
-export function AttendanceClient({ members, todayAttendance, currentSunday }: AttendanceClientProps) {
+type View = "CHECKED_IN" | "ALL";
+
+export function AttendanceClient({ checkedIn, totalMembers, currentSunday }: AttendanceClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"ALL" | "FIRST_TIMER" | "SECOND_TIMER" | "REGULAR">("ALL");
   const [editing, setEditing] = useState<CongregationMember | null>(null);
+  const [view, setView] = useState<View>("CHECKED_IN");
 
-  const checkedInIds = new Set(todayAttendance.map(a => a.member_id));
+  // "All members": loaded a page at a time, only when asked for
+  const [allMembers, setAllMembers] = useState<CongregationMember[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Search: runs on the server across the whole congregation
+  const [rawSearchResults, setSearchResults] = useState<CongregationMember[] | null>(null);
+  // Results only apply while there's a search of 2+ characters
+  const searchResults = search.trim().length >= 2 ? rawSearchResults : null;
+  const [searching, setSearching] = useState(false);
+
+  const checkedInIds = new Set(checkedIn.map(m => m.id));
+
+  async function loadMore() {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    const last = allMembers[allMembers.length - 1];
+    const res = await loadMemberPage(last ? { name: last.name, id: last.id! } : undefined);
+    setLoadingMore(false);
+    if ("error" in res) return toast.error(res.error);
+    setAllMembers(prev => [...prev, ...res.members]);
+    setHasMore(res.hasMore);
+  }
+
+  function showAll() {
+    setView("ALL");
+    if (allMembers.length === 0) loadMore();
+  }
+
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 2) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      const results = await findMembers(q);
+      if (!cancelled) {
+        setSearchResults(results);
+        setSearching(false);
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [search]);
 
   const navigateWeek = (direction: -1 | 1) => {
     const newSunday = addWeeksToDate(currentSunday, direction);
@@ -113,13 +165,8 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
     return "REGULAR";
   };
 
-  const filteredMembers = members.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(search.toLowerCase()) || m.phone.includes(search);
-    if (!matchesSearch) return false;
-    
-    if (filter === "ALL") return true;
-    return getVisitorStatus(m) === filter;
-  }).sort((a, b) => {
+  const source = searchResults ?? (view === "ALL" ? allMembers : checkedIn);
+  const filteredMembers = source.filter(m => filter === "ALL" || getVisitorStatus(m) === filter).sort((a, b) => {
     // Sort checked in first, then by name
     const aChecked = checkedInIds.has(a.id!);
     const bChecked = checkedInIds.has(b.id!);
@@ -128,16 +175,23 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
     return a.name.localeCompare(b.name);
   });
 
-  const checkedInCount = todayAttendance.length;
-  const newCount = todayAttendance.filter(a => {
-    const m = members.find(m => m.id === a.member_id);
-    return m ? getVisitorStatus(m) === "FIRST_TIMER" : false;
-  }).length;
+  const checkedInCount = checkedIn.length;
+  const newCount = checkedIn.filter(m => getVisitorStatus(m) === "FIRST_TIMER").length;
   const returningCount = checkedInCount - newCount;
 
   return (
     <div className="max-w-5xl space-y-6">
-      {editing && <EditMemberModal member={editing} onClose={() => setEditing(null)} />}
+      {editing && (
+        <EditMemberModal
+          member={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(m) => {
+            const patch = (list: CongregationMember[]) => list.map(x => (x.id === m.id ? m : x));
+            setAllMembers(patch);
+            setSearchResults(prev => (prev ? patch(prev) : prev));
+          }}
+        />
+      )}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
@@ -204,12 +258,27 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
             <Search size={18} className="text-[var(--text-muted)]" />
             <input 
               type="text" 
-              placeholder="Search by name or phone..." 
+              placeholder={`Search all ${totalMembers} members by name or phone...`}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="bg-transparent border-none focus:outline-none text-sm w-full"
               style={{ color: "var(--text-primary)" }}
             />
+          </div>
+          <div className="flex items-center gap-1 rounded-md p-0.5" role="tablist" aria-label="Which members to show" style={{ background: "var(--bg-input)" }}>
+            {([["CHECKED_IN", `Checked in (${checkedInCount})`], ["ALL", `All members (${totalMembers})`]] as const).map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                role="tab"
+                aria-selected={view === v && !searchResults}
+                onClick={() => { setSearch(""); if (v === "ALL") { showAll(); } else { setView("CHECKED_IN"); } }}
+                className="px-2.5 py-1 text-xs font-medium rounded"
+                style={view === v && !searchResults ? { background: "var(--bg-card)", color: "var(--text-primary)" } : { color: "var(--text-secondary)" }}
+              >
+                {label}
+              </button>
+            ))}
           </div>
           <div className="flex items-center gap-2">
             <Filter size={16} className="text-[var(--text-muted)]" />
@@ -219,7 +288,7 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
               className="text-sm bg-transparent border-none focus:outline-none cursor-pointer font-medium"
               style={{ color: "var(--text-primary)" }}
             >
-              <option value="ALL">All Members</option>
+              <option value="ALL">Any visit count</option>
               <option value="FIRST_TIMER">First Timers (1st visit)</option>
               <option value="SECOND_TIMER">Second Timers (2nd visit)</option>
               <option value="REGULAR">Regulars (3+ visits)</option>
@@ -299,13 +368,26 @@ export function AttendanceClient({ members, todayAttendance, currentSunday }: At
               {filteredMembers.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-[var(--text-muted)] italic text-sm">
-                    No members found.
+                    {searching || loadingMore ? "Loading…" : searchResults ? "No members match that search." : view === "CHECKED_IN" ? "Nobody has checked in for this Sunday yet." : "No members found."}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+        {view === "ALL" && !searchResults && hasMore && allMembers.length > 0 && (
+          <div className="p-3 text-center border-t" style={{ borderColor: "var(--border-primary)" }}>
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="px-4 py-1.5 text-sm font-medium rounded-md disabled:opacity-60"
+              style={{ background: "var(--bg-input)", color: "var(--text-primary)" }}
+            >
+              {loadingMore ? "Loading…" : `Load more (showing ${allMembers.length} of ${totalMembers})`}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

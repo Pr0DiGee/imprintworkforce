@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { serializeData } from "@/lib/serialize";
@@ -73,8 +74,10 @@ export function verifySessionCookie(token: string | undefined | null): { uid: st
  * A session is also rejected if it was issued before the user's
  * `sessions_valid_after` (set when their password or email changes), which
  * signs them out on every other device.
+ *
+ * Wrapped in React cache(): the layout and the page share one lookup per request.
  */
-export async function getServerUser(): Promise<UserProfile | null> {
+export const getServerUser = cache(async (): Promise<UserProfile | null> => {
   const cookieStore = await cookies();
   const session = verifySessionCookie(cookieStore.get(SESSION_COOKIE_NAME)?.value);
   if (!session) return null;
@@ -92,4 +95,4 @@ export async function getServerUser(): Promise<UserProfile | null> {
     console.error("[getServerUser] Failed to fetch profile:", err);
     return null;
   }
-}
+});

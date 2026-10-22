@@ -189,6 +189,7 @@ export async function registerAndCheckIn(formData: FormData): Promise<CheckInRes
       name,
       phone,
       phone_normalized: normalized,
+      name_lower: name.toLowerCase(),
       email: email || null,
       birthday: birthday || null,
       address: address || null,

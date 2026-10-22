@@ -4,7 +4,8 @@ import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import Link from "next/link";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-auth";
+import { Logo } from "@/components/Logo";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -169,7 +170,7 @@ export default function LoginPage() {
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3" />
         
         <div className="relative z-10">
-          <img src="/logo.png" alt="Imprint Global Church" className="w-16 h-16 mb-4 object-contain" />
+          <Logo size={64} className="w-16 h-16 mb-4" priority />
           <h1 className="text-4xl font-bold tracking-tight mb-2">Imprint Workforce</h1>
           <p className="text-lg opacity-80 max-w-md leading-relaxed">
             A unified platform for managing reports, tasks, devotions, and service feedback.
@@ -186,7 +187,7 @@ export default function LoginPage() {
         
         {/* Mobile Branding */}
         <div className="mb-8 md:hidden flex items-center gap-3">
-          <img src="/logo.png" alt="Imprint Global Church" className="w-10 h-10 object-contain" />
+          <Logo size={40} className="w-10 h-10" priority />
           <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>Imprint Workforce</h1>
         </div>
 

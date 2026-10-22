@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-auth";
 import { useState } from "react";
 
 /** This device's push subscription endpoint, if any (gives up after 2s). */

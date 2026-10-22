@@ -40,7 +40,8 @@ Root-level `fix_profile.js`, `update_profile.js`, `scratch_script.js` are leftov
 1. Client signs in with Firebase Auth (`lib/firebase/client.ts`), gets an ID token.
 2. `POST /api/auth/session` verifies the token via the Identity Toolkit REST API and sets an httpOnly `session` cookie of the form `uid.timestamp.hmacSHA256` (7 days, signed with `SESSION_SECRET`). It is a custom HMAC cookie, **not** a Firebase session cookie.
 3. Server Components / routes call `getServerUser()` (`lib/server-auth.ts`), which verifies the cookie and loads `users/{uid}` via the Admin SDK. Every dashboard `page.tsx` does `const user = await getServerUser(); if (!user) redirect("/login")` and then does its own role check.
-4. Client-side, `context/AuthContext.tsx` (`useAuth()`) tracks the Firebase user and the Firestore profile; it re-fetches the profile every 5 minutes to pick up role changes.
+4. `app/dashboard/layout.tsx` passes that profile to `DashboardShell` → `SidebarNav`/`SidebarUserInfo`, so menus never fetch it client-side. `getServerUser` and `fetchAllUsers`/`fetchUserMap` are wrapped in React `cache()`, so the layout and page share one lookup per request. After a profile change, call `router.refresh()`.
+5. Firebase browser SDK: `lib/firebase/client-auth.ts` (Auth only; sign-in pages) and `lib/firebase/client.ts` (adds Firestore; dashboard writers). Public pages (check-in) load neither.
 
 All session code lives in `lib/server-auth.ts` (sign, verify, cookie options, `getServerUser`). Changing a password or email sets `users/{uid}.sessions_valid_after` (seconds) and revokes Firebase refresh tokens, which signs out every other device; the changing device gets a fresh cookie and re-signs in to Firebase in `ProfileForm`.
 
@@ -56,6 +57,12 @@ Roles (`types/index.ts`): `WORKER`, `PASTOR`, `LEAD_PASTOR`, `ADMIN` (super-user
 **`lib/permissions.ts` is the single source of truth.** Never check `user.role === ...` directly: call `can(user, "editDevotion")` etc. on the server, in routes and in components. `firestore.rules` gets the same lists through a generated `// <generated:permissions>` block (`npm run rules:sync`); `npm test` fails if they drift. To change who can do something, edit `PERMISSIONS`, run `rules:sync`, and deploy the rules.
 
 Reports lock 24 hours after submission for everyone, admins included (`reportLocked()` in the rules, `REPORT_EDIT_WINDOW_MS` in `ReportsClient.tsx`). The admin catch-all rule deliberately skips the `reports` collection.
+
+### Large collections: never load them whole
+- **Follow-up**: contacts carry a latest-log summary (`last_log_at`, `last_log_method`, `last_log_notes`, `last_log_by`, `last_log_sunday`, `log_count`), written together with each log by `logFollowUp()` in `app/dashboard/followup/actions.ts`. Lists read only contacts; full history loads on demand (`getFollowUpHistory`, `components/FollowUpHistory.tsx`).
+- **Attendance**: the page loads that Sunday's check-ins; the full congregation is paged (`fetchMemberPage`) or searched by `name_lower` / `phone_normalized` prefix (`searchMembers`).
+- **Notes / History**: counts come from Firestore `count()` aggregations, not downloaded documents.
+- `scripts/backfill-summaries.ts` recomputes the stored summaries/search fields (dev by default, `--production` for prod); `scripts/seed-volume.ts` fills dev with realistic volume.
 
 ### Deletes
 Deleting a user (`DELETE /api/admin/users`) deletes tasks assigned to them, their notes and push subscriptions, and clears their roster/devotion slots, then the account. Deleting a follow-up contact goes through `app/dashboard/followup/actions.ts` and removes its logs too. Batch helpers: `lib/server-cleanup.ts`.
@@ -81,7 +88,7 @@ Rich text (reports, devotion notes, notes) is stored as **stringified Tiptap JSO
 `/checkin` (no login) is driven by server actions in `app/checkin/actions.ts`. They only work on Sundays in Lagos time (`getLagosToday()`; `CHECKIN_TEST_NOW` fakes the clock in dev only). The member is recognised by the `iw_member_id` cookie, or by a phone number normalised with `lib/phone.ts` (`phone_normalized`, with a fallback for legacy raw numbers). Only the first name is ever returned. Existing members are never edited from check-in, and attendance docs are `{memberId}_{sunday}` (one per Sunday). Phone lookups are rate-limited per IP in `checkin_rate_limits`; the daily cron deletes expired records (`cleanupExpiredRateLimits`). Pastors and members of the USHERING department (`canManageAttendance`) see `/dashboard/attendance` and edit member details via `app/dashboard/attendance/actions.ts`. Browsers can't write `congregation`/`attendance` at all.
 
 ### PWA
-`public/manifest.json` + `public/sw.js` (network-first cache plus push/notificationclick handlers), registered from an inline script in `app/layout.tsx` that also applies the dark-mode class before hydration. `proxy.ts` must keep letting `/manifest.json`, `/sw.js`, and `*.png` through without auth.
+`public/manifest.json` + `public/sw.js` (caches only static assets, cache-first; pages/data/API are never cached; navigations fall back to `public/offline.html`; bump `CACHE_NAME` when changing the policy) plus push/notificationclick handlers, registered from an inline script in `app/layout.tsx` that also applies the dark-mode class before hydration. `proxy.ts` must keep letting `/manifest.json`, `/sw.js`, `/offline.html`, and `*.png` through without auth. The logo is rendered via `components/Logo.tsx` (next/image at display size).
 
 ### Styling
 Tailwind v4 via `@tailwindcss/postcss`, with no `tailwind.config.js`; theme tokens are CSS variables in `app/globals.css` (`--bg-page`, `--text-primary`, `--accent`, …) and components mostly use them through inline `style={{ … "var(--x)" }}`. Dark mode is a `dark` class on `<html>` handled by `context/ThemeContext.tsx` (localStorage key `iw-theme`); `next-themes` is installed but not used. `components.json` (shadcn) exists but there is no `components/ui` directory. Print layouts rely on `.no-print` / `.print-full-width` classes.

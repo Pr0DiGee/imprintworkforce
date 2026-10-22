@@ -11,19 +11,20 @@ import { db } from "@/lib/firebase/client";
 import { Phone, MessageSquare, MapPin, User, CheckCircle2, UserCheck, Search, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { GlobalFollowUpTable } from "@/components/GlobalFollowUpTable";
-import { formatRelativeCheckInDate } from "@/lib/date";
+import { formatRelativeCheckInDate, toJsDate } from "@/lib/date";
+import { FollowUpHistory, latestLogOf } from "@/components/FollowUpHistory";
+import { logFollowUp } from "./actions";
 
 interface FollowUpClientProps {
   user: UserProfile;
   contacts: FollowUpContact[];
-  logs: FollowUpLog[];
   userMap: Record<string, string>;
   targetSunday: string;
 }
 
 type Tab = "MY_FOLLOW_UPS" | "GLOBAL_LIST";
 
-export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: FollowUpClientProps) {
+export function FollowUpClient({ user, contacts, userMap, targetSunday }: FollowUpClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("MY_FOLLOW_UPS");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -55,29 +56,10 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
       );
     }
     
-    // Then, sort by latest log time (most recent first, no logs last)
-    return [...filtered].sort((a, b) => {
-      const logA = logs.find(l => l.contact_id === a.id);
-      const logB = logs.find(l => l.contact_id === b.id);
-      
-      if (!logA && !logB) return 0;
-      if (!logA) return 1;
-      if (!logB) return -1;
-      
-      const timeA = new Date(logA.logged_at as any).getTime();
-      const timeB = new Date(logB.logged_at as any).getTime();
-      return timeB - timeA;
-    });
-  }, [activeTab, myContacts, campusContacts, searchQuery, logs]);
-
-  // Helper to check if a contact was followed up this week
-  const hasLoggedThisWeek = (contactId: string) => {
-    return logs.some(l => l.contact_id === contactId && l.target_sunday === targetSunday);
-  };
-
-  const getLatestLog = (contactId: string) => {
-    return logs.find(l => l.contact_id === contactId); // Logs are already sorted desc
-  };
+    // Then, most recently followed up first (never contacted last)
+    const lastAt = (c: FollowUpContact) => toJsDate(c.last_log_at)?.getTime() ?? -1;
+    return [...filtered].sort((a, b) => lastAt(b) - lastAt(a));
+  }, [activeTab, myContacts, campusContacts, searchQuery]);
 
   return (
     <div className="max-w-5xl">
@@ -141,9 +123,7 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
       {activeTab === "GLOBAL_LIST" ? (
         <GlobalFollowUpTable 
           contacts={campusContacts}
-          logs={logs}
           userMap={userMap}
-          targetSunday={targetSunday}
           canReassign={isPastor}
         />
       ) : (
@@ -166,8 +146,8 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredContacts.map(contact => {
-              const completedThisWeek = hasLoggedThisWeek(contact.id!);
-              const latestLog = getLatestLog(contact.id!);
+              const completedThisWeek = contact.last_log_sunday === targetSunday;
+              const latestLog = latestLogOf(contact);
               return (
                 <ContactCard
                   key={contact.id}
@@ -175,7 +155,7 @@ export function FollowUpClient({ user, contacts, logs, userMap, targetSunday }: 
                   user={user}
                   userMap={userMap}
                   completedThisWeek={completedThisWeek}
-                  latestLog={latestLog} contactLogs={logs.filter(l => l.contact_id === contact.id)}
+                  latestLog={latestLog}
                   targetSunday={targetSunday}
                   readOnly={false}
                 />
@@ -213,16 +193,14 @@ function ContactCard({
   user,
   userMap,
   completedThisWeek,
-  latestLog, contactLogs,
-  targetSunday,
+  latestLog,
   readOnly
 }: {
   contact: FollowUpContact;
   user: UserProfile;
   userMap: Record<string, string>;
   completedThisWeek: boolean;
-  latestLog?: FollowUpLog;
-  contactLogs: FollowUpLog[];
+  latestLog?: ReturnType<typeof latestLogOf>;
   targetSunday: string;
   readOnly: boolean;
 }) {
@@ -236,24 +214,18 @@ function ContactCard({
   const handleLog = async () => {
     if (!contact.id) return;
     setSubmitting(true);
-    try {
-      await addDoc(collection(db, "followup_logs"), {
-        contact_id: contact.id,
-        worker_id: user.uid,
-        method: logMethod,
-        notes: logNotes.trim(),
-        target_sunday: targetSunday,
-        logged_at: serverTimestamp()
-      });
-      toast.success("Follow-up logged successfully");
-      setLogging(false);
-      setLogNotes("");
-      router.refresh();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to log follow-up");
+    const res = await logFollowUp(contact.id, logMethod, logNotes);
+    if ("error" in res) {
+      toast.error(res.error);
       setSubmitting(false);
+      return;
     }
+    toast.success("Follow-up logged successfully");
+    setLogging(false);
+    setLogNotes("");
+    setSubmitting(false);
+    setShowHistory(false); // re-opening loads the fresh history
+    router.refresh();
   };
 
   return (
@@ -386,7 +358,7 @@ function ContactCard({
                 <div className="text-xs" style={{ color: "var(--text-muted)" }}>
                   {latestLog ? (
                     <span>
-                      Last: {latestLog.method} • {formatRelativeCheckInDate(latestLog.logged_at as any)}
+                      Last: {latestLog.methodLabel} • {formatRelativeCheckInDate(latestLog.logged_at)}
                     </span>
                   ) : (
                     <span>No activity yet</span>
@@ -409,26 +381,11 @@ function ContactCard({
                   className="flex items-center justify-between w-full hover:opacity-80 transition-opacity"
                 >
                   <span className="font-medium" style={{ color: "var(--text-primary)" }}>
-                    Total Logs: {contactLogs ? contactLogs.length : 0}
+                    Total Logs: {contact.log_count ?? 0}
                   </span>
                   <span style={{ color: "var(--accent)" }}>{showHistory ? "Hide History" : "View History"}</span>
                 </button>
-                {showHistory && contactLogs && contactLogs.length > 0 && (
-                  <div className="mt-2 space-y-2 max-h-40 overflow-y-auto pr-1">
-                    {contactLogs.map(log => (
-                      <div key={log.id} className="p-2 rounded bg-black/5 dark:bg-white/5">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{log.method}</span>
-                          <span style={{ color: "var(--text-muted)" }}>{formatRelativeCheckInDate(log.logged_at as any)}</span>
-                        </div>
-                        {log.notes && <p style={{ color: "var(--text-secondary)" }}>{log.notes}</p>}
-                        <div className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
-                          By: {userMap[log.worker_id] || "Unknown"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {showHistory && <FollowUpHistory contactId={contact.id!} userMap={userMap} className="mt-2" />}
               </div>
             </div>
           )}

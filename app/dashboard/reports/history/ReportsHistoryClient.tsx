@@ -12,9 +12,12 @@ interface WeekSummary {
 
 interface ReportsHistoryClientProps {
   history: WeekSummary[];
+  /** How many weeks back this list covers */
+  weeks: number;
+  nextWeeks: number;
 }
 
-export function ReportsHistoryClient({ history }: ReportsHistoryClientProps) {
+export function ReportsHistoryClient({ history, weeks, nextWeeks }: ReportsHistoryClientProps) {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
@@ -22,7 +25,7 @@ export function ReportsHistoryClient({ history }: ReportsHistoryClientProps) {
           Report History
         </h2>
         <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>
-          Browse past weeks to view archived department reports.
+          Browse past weeks to view archived department reports. Showing the last {weeks} weeks.
         </p>
       </div>
 
@@ -57,6 +60,17 @@ export function ReportsHistoryClient({ history }: ReportsHistoryClientProps) {
             </Link>
           ))
         )}
+      </div>
+
+      <div className="text-center">
+        <Link
+          href={`/dashboard/reports/history?weeks=${nextWeeks}`}
+          scroll={false}
+          className="inline-block px-4 py-1.5 text-sm font-medium rounded-md"
+          style={{ background: "var(--bg-input)", color: "var(--text-primary)" }}
+        >
+          Show older weeks
+        </Link>
       </div>
     </div>
   );

@@ -3,15 +3,15 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { FollowUpContact, FollowUpLog } from "@/types";
+import { FollowUpContact } from "@/types";
 import { Search } from "lucide-react";
 import { reassignFollowUpContact } from "@/app/dashboard/followup/actions";
+import { FollowUpHistory, latestLogOf } from "@/components/FollowUpHistory";
+import { toJsDate } from "@/lib/date";
 
 interface GlobalFollowUpTableProps {
   contacts: FollowUpContact[];
-  logs: FollowUpLog[];
   userMap: Record<string, string>;
-  targetSunday: string;
   /** Show a worker picker so pastors/admins can reassign contacts */
   canReassign?: boolean;
 }
@@ -62,7 +62,7 @@ function AssigneeCell({ contact, userMap, canReassign }: { contact: FollowUpCont
 
 import { formatRelativeCheckInDate } from "@/lib/date";
 
-export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday, canReassign = false }: GlobalFollowUpTableProps) {
+export function GlobalFollowUpTable({ contacts, userMap, canReassign = false }: GlobalFollowUpTableProps) {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -72,23 +72,9 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday, can
     return c.name.toLowerCase().includes(q) || c.phone.includes(q) || (c.address && c.address.toLowerCase().includes(q));
   });
 
-  const getLatestLog = (contactId: string) => {
-    return logs.find(l => l.contact_id === contactId); // logs are sorted desc
-  };
-
-  const sortedContacts = [...filteredContacts].sort((a, b) => {
-    const logA = getLatestLog(a.id!);
-    const logB = getLatestLog(b.id!);
-    
-    if (!logA && !logB) return 0;
-    if (!logA) return 1;
-    if (!logB) return -1;
-    
-    const timeA = new Date(logA.logged_at as any).getTime();
-    const timeB = new Date(logB.logged_at as any).getTime();
-    
-    return timeB - timeA;
-  });
+  // Most recently followed up first (never contacted last)
+  const lastAt = (c: FollowUpContact) => toJsDate(c.last_log_at)?.getTime() ?? -1;
+  const sortedContacts = [...filteredContacts].sort((a, b) => lastAt(b) - lastAt(a));
 
   return (
     <div className="rounded-lg overflow-hidden shadow-sm border w-full" style={{ background: "var(--bg-card)", borderColor: "var(--border-primary)" }}>
@@ -118,8 +104,8 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday, can
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)]">
             {sortedContacts.map(contact => {
-              const latestLog = getLatestLog(contact.id!);
-              const contactLogs = logs.filter(l => l.contact_id === contact.id);
+              const latestLog = latestLogOf(contact);
+              const logCount = contact.log_count ?? 0;
               const isExpanded = expandedId === contact.id;
               
               return (
@@ -134,13 +120,13 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday, can
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-xs font-medium px-2 py-1 rounded" style={{ background: "var(--bg-input)", color: "var(--text-secondary)" }}>
-                      {formatRelativeCheckInDate(latestLog?.logged_at as any)}
+                      {formatRelativeCheckInDate(latestLog?.logged_at)}
                     </span>
                   </td>
                   <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>
                     {latestLog ? (
                       <span className="text-xs px-2 py-0.5 rounded-full border border-[var(--border-primary)]" style={{ background: "var(--bg-elevated)" }}>
-                        {latestLog.method === "PHYSICAL" ? "Physical" : latestLog.method === "CALL" ? "Call" : "Text"}
+                        {latestLog.methodLabel}
                       </span>
                     ) : (
                       <span className="text-xs italic text-[var(--text-muted)]">-</span>
@@ -157,29 +143,16 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday, can
                       className="text-xs font-medium px-3 py-1.5 rounded transition-colors"
                       style={{ background: isExpanded ? "var(--accent)" : "var(--bg-input)", color: isExpanded ? "#fff" : "var(--text-primary)" }}
                     >
-                      {isExpanded ? "Hide" : `View (${contactLogs.length})`}
+                      {isExpanded ? "Hide" : `View (${logCount})`}
                     </button>
                   </td>
                 </tr>
-                {isExpanded && contactLogs.length > 0 && (
+                {isExpanded && (
                   <tr>
                     <td colSpan={6} className="p-0">
                       <div className="bg-black/5 dark:bg-white/5 p-4 inset-shadow-sm border-b border-[var(--border-primary)]">
-                        <h4 className="text-xs font-semibold mb-3" style={{ color: "var(--text-secondary)" }}>Log History ({contactLogs.length})</h4>
-                        <div className="space-y-2">
-                          {contactLogs.map(log => (
-                            <div key={log.id} className="bg-[var(--bg-card)] p-3 rounded border border-[var(--border-primary)] shadow-sm">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{log.method}</span>
-                                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{formatRelativeCheckInDate(log.logged_at as any)}</span>
-                              </div>
-                              {log.notes && <p className="text-sm mb-2" style={{ color: "var(--text-secondary)" }}>{log.notes}</p>}
-                              <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                                By: {userMap[log.worker_id] || "Unknown"}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                        <h4 className="text-xs font-semibold mb-3" style={{ color: "var(--text-secondary)" }}>Log History ({logCount})</h4>
+                        <FollowUpHistory contactId={contact.id!} userMap={userMap} />
                       </div>
                     </td>
                   </tr>
@@ -202,8 +175,8 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday, can
       {/* Mobile Cards */}
       <div className="md:hidden flex flex-col gap-4 mt-2">
         {sortedContacts.map((contact) => {
-          const contactLogs = logs.filter(l => l.contact_id === contact.id).sort((a, b) => new Date(b.logged_at as any).getTime() - new Date(a.logged_at as any).getTime());
-          const latestLog = contactLogs[0];
+          const latestLog = latestLogOf(contact);
+          const logCount = contact.log_count ?? 0;
           const isExpanded = expandedId === contact.id;
 
           return (
@@ -237,7 +210,7 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday, can
                 <div className="flex justify-between items-center mb-1">
                   <div className="text-xs font-semibold text-[var(--text-secondary)]">Latest Log</div>
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full border border-[var(--border-primary)] bg-[var(--bg-card)]">
-                    {latestLog ? (latestLog.method === "PHYSICAL" ? "Physical" : latestLog.method === "CALL" ? "Call" : "Text") : "None"}
+                    {latestLog ? latestLog.methodLabel : "None"}
                   </span>
                 </div>
                 <div className="text-sm text-[var(--text-primary)] line-clamp-2">
@@ -245,7 +218,7 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday, can
                 </div>
                 {latestLog && (
                   <div className="text-xs text-[var(--text-muted)] mt-1.5">
-                    {formatRelativeCheckInDate(latestLog.logged_at as any)}
+                    {formatRelativeCheckInDate(latestLog.logged_at)}
                   </div>
                 )}
               </div>
@@ -255,23 +228,12 @@ export function GlobalFollowUpTable({ contacts, logs, userMap, targetSunday, can
                 className="w-full text-xs font-medium py-2 rounded transition-colors border border-[var(--border-primary)] mt-1"
                 style={{ background: isExpanded ? "var(--bg-elevated)" : "transparent", color: "var(--text-primary)" }}
               >
-                {isExpanded ? "Hide History" : `View History (${contactLogs.length})`}
+                {isExpanded ? "Hide History" : `View History (${logCount})`}
               </button>
 
-              {isExpanded && contactLogs.length > 0 && (
-                <div className="mt-2 space-y-2 border-t border-[var(--border-primary)] pt-3">
-                  {contactLogs.map(log => (
-                    <div key={log.id} className="bg-[var(--bg-input)] p-3 rounded">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-semibold text-sm text-[var(--text-primary)]">{log.method}</span>
-                        <span className="text-xs text-[var(--text-muted)]">{formatRelativeCheckInDate(log.logged_at as any)}</span>
-                      </div>
-                      {log.notes && <p className="text-sm mb-2 text-[var(--text-secondary)]">{log.notes}</p>}
-                      <div className="text-xs text-[var(--text-muted)]">
-                        By: {userMap[log.worker_id] || "Unknown"}
-                      </div>
-                    </div>
-                  ))}
+              {isExpanded && (
+                <div className="mt-2 border-t border-[var(--border-primary)] pt-3">
+                  <FollowUpHistory contactId={contact.id!} userMap={userMap} />
                 </div>
               )}
             </div>

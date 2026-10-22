@@ -3,6 +3,7 @@ import { getServerUser } from "@/lib/server-auth";
 import { fetchAllUsers } from "@/lib/server-data";
 import { getTargetSundayString, addWeeksToDate } from "@/lib/date";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { serializeData } from "@/lib/serialize";
 import { Roster, RosterDuty, ROSTER_DUTIES } from "@/types";
 import { RosterClient } from "./RosterClient";
 import { can } from "@/lib/permissions";
@@ -20,28 +21,21 @@ export default async function RosterPage() {
     addWeeksToDate(currentWindowSunday, 4),
   ];
 
-  const db = getAdminDb();
-  
-  // Pre-fetch all 5 Sundays
-  const allSlots: Record<string, Record<RosterDuty, Roster | null>> = {};
+  // One query for all 5 Sundays, alongside the user list
+  const [rosterSnap, users] = await Promise.all([
+    getAdminDb().collection("roster").where("service_date", "in", stripDates).get(),
+    fetchAllUsers(),
+  ]);
 
-  await Promise.all(
-    stripDates.map(async (date) => {
-      const slotEntries = await Promise.all(
-        ROSTER_DUTIES.map(async (duty) => {
-          const snap = await db.collection("roster").doc(`${date}_${duty}`).get();
-          if (!snap.exists) return [duty, null] as const;
-          const data = snap.data()!;
-          if (data.created_at) delete data.created_at;
-          return [duty, { id: snap.id, ...data } as Roster] as const;
-        })
-      );
-      allSlots[date] = Object.fromEntries(slotEntries) as Record<RosterDuty, Roster | null>;
-    })
+  const allSlots: Record<string, Record<RosterDuty, Roster | null>> = Object.fromEntries(
+    stripDates.map((date) => [date, Object.fromEntries(ROSTER_DUTIES.map((duty) => [duty, null])) as Record<RosterDuty, Roster | null>])
   );
-
-  const users = await fetchAllUsers();
-  users.sort((a, b) => a.name.localeCompare(b.name));
+  rosterSnap.docs.forEach((doc) => {
+    const slot = { id: doc.id, ...serializeData(doc.data()) } as Roster;
+    if (allSlots[slot.service_date] && ROSTER_DUTIES.includes(slot.duty)) {
+      allSlots[slot.service_date][slot.duty] = slot;
+    }
+  });
 
   return (
     <RosterClient

@@ -19,6 +19,7 @@ export function proxy(request: NextRequest) {
     pathname === "/logo.png" ||
     pathname === "/manifest.json" ||
     pathname === "/sw.js" ||
+    pathname === "/offline.html" ||
     pathname.endsWith(".png") ||
     pathname.endsWith(".ico") ||
     pathname.endsWith(".json")
@@ -50,6 +51,6 @@ export const config = {
      * - sw.js
      * - icon files and image assets (.png, .svg, etc.)
      */
-    "/((?!_next/static|_next/image|favicon.ico|logo.png|manifest\\.json|sw\\.js|.*\\.png$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|logo.png|manifest\\.json|sw\\.js|offline\\.html|.*\\.png$).*)",
   ],
 };

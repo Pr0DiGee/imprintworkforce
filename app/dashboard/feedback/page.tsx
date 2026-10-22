@@ -10,10 +10,11 @@ export default async function FeedbackPage() {
   if (!user) redirect("/login");
 
   const currentSunday = getTargetSundayString();
-  const allFeedback = await fetchFeedbackForSunday(currentSunday);
-  
+  const [allFeedback, usersMap] = await Promise.all([
+    fetchFeedbackForSunday(currentSunday),
+    fetchUserMap(),
+  ]);
   const myFeedback = allFeedback.find((f) => f.user_id === user.uid) ?? null;
-  const usersMap = await fetchUserMap();
 
   return (
     <FeedbackClient

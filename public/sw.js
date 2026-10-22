@@ -1,37 +1,71 @@
 // Service Worker for Imprint Workforce PWA
-const CACHE_NAME = 'iw-v2';
+//
+// Caching policy:
+//  - Static, non-personal files (app code under /_next/static, icons, logo,
+//    manifest) are served straight from the phone ("cache first"). These are
+//    the same for everyone, and Next.js gives each release new file names, so
+//    a saved copy is never stale. This is what makes the installed app open fast.
+//  - Pages, data and API calls are NEVER cached: they can contain private
+//    information (reports, notes, phone numbers) and must always be fresh.
+//  - With no connection, page visits get a small "You're offline" screen.
+//
+// Bump CACHE_NAME whenever this policy changes: activation deletes every
+// other cache, including the old one that stored private pages.
+const CACHE_NAME = 'iw-static-v3';
+const OFFLINE_URL = '/offline.html';
+const PRECACHE = [OFFLINE_URL, '/logo.png', '/icon-192.png', '/icon-512.png', '/manifest.json'];
 
-self.addEventListener('install', (e) => {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
-    ).then(() => self.clients.claim())
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  // Only handle GET requests with http/https schemes
-  if (e.request.method !== 'GET') return;
-  const url = new URL(e.request.url);
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((names) => Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))))
+      .then(() => self.clients.claim())
+  );
+});
+
+function isStaticAsset(url) {
+  if (url.origin !== self.location.origin) return false;
+  return (
+    url.pathname.startsWith('/_next/static/') ||
+    /^\/(icon-[\w-]+|logo|apple-icon)\.png$/.test(url.pathname) ||
+    url.pathname === '/manifest.json' ||
+    url.pathname === '/favicon.ico'
+  );
+}
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return;
 
-  // Network-first strategy: try network, fall back to cache
-  e.respondWith(
-    fetch(e.request)
-      .then((response) => {
-        // Cache successful responses for offline fallback
-        if (response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
-        }
-        return response;
+  if (isStaticAsset(url)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        });
       })
-      .catch(() => caches.match(e.request))
-  );
+    );
+    return;
+  }
+
+  // Page visits: always from the network; offline screen if there's no connection
+  if (request.mode === 'navigate') {
+    event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
+  }
+  // Everything else (data, API, images from other sites): browser default, never cached here
 });
 
 // ─── Native Web Push Notifications ──────────────────────────────────────────

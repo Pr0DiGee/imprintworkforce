@@ -15,10 +15,8 @@ export default async function DevotionPage() {
   const targetMonday = getMondayOfWeek(getTargetSundayString());
   const days = getMonToSatDates(targetMonday);
   
-  const devMap = await fetchDevotionForDates(days);
 
-  const users = await fetchAllUsers();
-  users.sort((a, b) => a.name.localeCompare(b.name));
+  const [devMap, users] = await Promise.all([fetchDevotionForDates(days), fetchAllUsers()]);
 
   const hasPermission = can(user, "editDevotion");
 

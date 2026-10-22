@@ -4,6 +4,7 @@ import { getServerUser } from "@/lib/server-auth";
 import { PrintButton } from "./PrintButton";
 import QRCode from "react-qr-code";
 import { can } from "@/lib/permissions";
+import { Logo } from "@/components/Logo";
 
 export default async function AttendanceQRPage() {
   const user = await getServerUser();
@@ -34,7 +35,7 @@ export default async function AttendanceQRPage() {
 
       <div className="border rounded-2xl p-12 inline-block shadow-sm" style={{ background: "var(--bg-card)", borderColor: "var(--border-primary)" }}>
         <div className="flex justify-center mb-6">
-          <img src="/logo.png" alt="Imprint Global Church" className="w-24 h-24 object-contain" />
+          <Logo size={96} className="w-24 h-24" priority />
         </div>
         <h1 className="text-4xl font-black tracking-tight mb-2 text-center" style={{ color: "var(--text-primary)" }}>
           Welcome to Imprint Global Church

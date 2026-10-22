@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-auth";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 

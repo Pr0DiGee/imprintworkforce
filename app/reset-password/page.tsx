@@ -3,7 +3,7 @@
 import { useState, FormEvent, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-auth";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 

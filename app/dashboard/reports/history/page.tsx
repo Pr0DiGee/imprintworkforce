@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
 import { getServerUser } from "@/lib/server-auth";
 import { can } from "@/lib/permissions";
-import { fetchAllReportSundays } from "@/lib/server-data";
+import { fetchReportCountsByWeek } from "@/lib/server-data";
 import { ReportsHistoryClient } from "./ReportsHistoryClient";
 
-export default async function ReportsHistoryPage() {
+const WEEKS_STEP = 12;
+
+export default async function ReportsHistoryPage({ searchParams }: { searchParams: Promise<{ weeks?: string }> }) {
   const user = await getServerUser();
   if (!user) redirect("/login");
 
@@ -12,7 +14,9 @@ export default async function ReportsHistoryPage() {
     redirect("/dashboard");
   }
 
-  const history = await fetchAllReportSundays();
+  const requested = parseInt((await searchParams).weeks ?? "", 10);
+  const weeks = Math.min(Math.max(Number.isFinite(requested) ? requested : WEEKS_STEP, WEEKS_STEP), 260);
+  const history = await fetchReportCountsByWeek(weeks);
 
-  return <ReportsHistoryClient history={history} />;
+  return <ReportsHistoryClient history={history} weeks={weeks} nextWeeks={weeks + WEEKS_STEP} />;
 }

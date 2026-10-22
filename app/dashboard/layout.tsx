@@ -1,20 +1,17 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/DashboardShell";
+import { getServerUser } from "@/lib/server-auth";
 
-// Secondary auth guard — proxy.ts already handles the primary redirect,
-// but this catches any edge cases where a Server Component renders without a cookie.
+// Loads the signed-in profile once per request (getServerUser is cached, so
+// the page reuses it) and hands it to the menu, so role-based links are
+// right on the first render instead of appearing after a client-side fetch.
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const uid = cookieStore.get("session")?.value;
+  const user = await getServerUser();
+  if (!user) redirect("/login");
 
-  if (!uid) {
-    redirect("/login");
-  }
-
-  return <DashboardShell>{children}</DashboardShell>;
+  return <DashboardShell user={user}>{children}</DashboardShell>;
 }

@@ -61,7 +61,7 @@ function StatCard({ title, value, subtitle, href, accentColor, icon }: StatCardP
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
-import type { FollowUpContact, FollowUpLog } from "@/types";
+import type { FollowUpContact } from "@/types";
 import { GlobalFollowUpTable } from "@/components/GlobalFollowUpTable";
 
 interface DashboardClientProps {
@@ -74,7 +74,6 @@ interface DashboardClientProps {
   upcomingSunday: string;
   weekDays: string[];
   followUpContacts: FollowUpContact[];
-  followUpLogs: FollowUpLog[];
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -89,7 +88,6 @@ export function DashboardClient({
   upcomingSunday,
   weekDays,
   followUpContacts,
-  followUpLogs,
 }: DashboardClientProps) {
   const upSundayFormatted = formatShortDate(upcomingSunday);
 
@@ -353,9 +351,7 @@ export function DashboardClient({
         </div>
         <GlobalFollowUpTable 
           contacts={followUpContacts}
-          logs={followUpLogs}
           userMap={users}
-          targetSunday={currentSunday}
         />
       </div>
     </div>

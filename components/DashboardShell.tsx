@@ -9,6 +9,8 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, CheckSquare, FileText, UserCheck } from "lucide-react";
 
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
+import type { UserProfile } from "@/types";
+import { Logo } from "@/components/Logo";
 
 function MobileNavItem({ href, icon: Icon, label }: { href: string; icon: any; label: string }) {
   const pathname = usePathname();
@@ -26,7 +28,7 @@ function MobileNavItem({ href, icon: Icon, label }: { href: string; icon: any; l
   );
 }
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+export function DashboardShell({ children, user }: { children: React.ReactNode; user: UserProfile }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -40,7 +42,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         }}
       >
         <div className="px-4 py-5 flex items-center gap-2" style={{ borderBottom: "1px solid var(--border-primary)" }}>
-          <img src="/logo.png" alt="Imprint Global Church" className="w-8 h-8 object-contain" />
+          <Logo size={32} className="w-8 h-8" priority />
           <h1 className="text-base font-bold leading-tight" style={{ color: "var(--text-primary)" }}>
             Imprint
             <br />
@@ -48,10 +50,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </h1>
         </div>
 
-        <SidebarNav />
+        <SidebarNav user={user} />
 
         <div className="px-4 py-4 space-y-2" style={{ borderTop: "1px solid var(--border-primary)" }}>
-          <SidebarUserInfo />
+          <SidebarUserInfo user={user} />
           <SignOutButton />
         </div>
       </aside>
@@ -65,7 +67,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         }}
       >
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Imprint Global Church" className="w-6 h-6 object-contain" />
+          <Logo size={24} className="w-6 h-6" priority />
           <h1 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
             Imprint Workforce
           </h1>
@@ -99,7 +101,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       >
         <div className="px-4 py-5 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border-primary)" }}>
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Imprint Global Church" className="w-8 h-8 object-contain" />
+            <Logo size={32} className="w-8 h-8" priority />
             <h1 className="text-base font-bold leading-tight" style={{ color: "var(--text-primary)" }}>
               Imprint
               <br />
@@ -117,10 +119,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        <SidebarNav onNavigate={() => setMobileOpen(false)} />
+        <SidebarNav user={user} onNavigate={() => setMobileOpen(false)} />
 
         <div className="px-4 py-4 space-y-2" style={{ borderTop: "1px solid var(--border-primary)" }}>
-          <SidebarUserInfo />
+          <SidebarUserInfo user={user} />
           <SignOutButton />
         </div>
       </aside>

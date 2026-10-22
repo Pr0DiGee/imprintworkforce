@@ -4,12 +4,14 @@ import { useState, useRef } from "react";
 import { UserProfile, DEPARTMENT_LABELS, ROLE_LABELS } from "@/types";
 import { updateProfile } from "./actions";
 import { Avatar } from "@/components/Avatar";
-import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-auth";
 
 export function ProfileForm({ user }: { user: UserProfile }) {
-  const { refreshProfile } = useAuth();
+  const router = useRouter();
+  // The menu and pages read the profile on the server; refresh re-renders them
+  const refreshProfile = () => router.refresh();
   
   // Profile State
   const [loading, setLoading] = useState(false);
@@ -55,7 +57,7 @@ export function ProfileForm({ user }: { user: UserProfile }) {
       if (result?.error) {
         setError(result.error);
       } else {
-        await refreshProfile();
+        refreshProfile();
         setSuccess(true);
       }
     } catch (err) {
@@ -116,7 +118,7 @@ export function ProfileForm({ user }: { user: UserProfile }) {
       setSecMode("none");
 
       if (secMode === "email") {
-        await refreshProfile();
+        refreshProfile();
       }
     } catch (err: any) {
       setSecError(err.message || "An unexpected error occurred.");

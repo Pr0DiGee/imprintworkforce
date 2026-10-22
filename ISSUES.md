@@ -48,14 +48,14 @@ Suggested order: A (security) → 8 → 9–11 → C (speed) → the rest.
 
 ## C. Speed
 
-- [ ] **19. Whole-collection reads on every load** — all follow-up logs/contacts/users on dashboard and follow-up; full note contents just to count notes; entire congregation on attendance; all reports on history. Grows over time.
-- [ ] **20. Sequential query waterfalls** — user lookup then data; `fetchDashboardStats` runs 3 queries in series; roster page does 30 single reads then loads users.
-- [ ] **21. Server region / cold starts** — no Vercel region set (default US East) while users are in Nigeria; firebase-admin cold starts.
+- [x] **19. Whole-collection reads on every load** — all follow-up logs/contacts/users on dashboard and follow-up; full note contents just to count notes; entire congregation on attendance; all reports on history. Grows over time. *(Fixed: follow-up contacts carry a latest-log summary (history loads on demand); notes are counted, not downloaded; attendance loads that Sunday's check-ins with paged/searchable full list; history counts the last 12 weeks with "Show older")*
+- [x] **20. Sequential query waterfalls** — user lookup then data; `fetchDashboardStats` runs 3 queries in series; roster page does 30 single reads then loads users. *(Fixed: user/profile lookups shared per request; roster is one query; devotion/feedback/stats run in parallel)*
+- [x] **21. Server region / cold starts** — no Vercel region set (default US East) while users are in Nigeria; firebase-admin cold starts. *(Done: Vercel functions moved to Cape Town (cpt1), next to Firestore africa-south1)*
   Fix: pin region near the Firestore location, then measure.
-- [ ] **22. Firebase client SDK + duplicate profile fetch on every page** (incl. public check-in); admin/pastor nav links pop in late.
-- [ ] **23. Service worker** intercepts every request, caches every page (incl. private data) without limit, gives no speed benefit.
+- [x] **22. Firebase client SDK + duplicate profile fetch on every page** (incl. public check-in); admin/pastor nav links pop in late. *(Fixed: menu uses the server-loaded profile; Firebase only loads on pages that use it (none on check-in; login loads Auth only))*
+- [x] **23. Service worker** intercepts every request, caches every page (incl. private data) without limit, gives no speed benefit. *(Fixed: only static files cached (served instantly); pages/data never cached; offline screen; old private cache deleted on update)*
   Fix: cache static assets only.
-- [ ] **24. Minor:** 110KB logo via `<img>` (11 places); O(n²) sort in Follow-Up.
+- [x] **24. Minor:** 110KB logo via `<img>` (11 places); O(n²) sort in Follow-Up. *(Fixed: logo served at display size via next/image; follow-up sorting uses the stored summary)*
 
 ## D. Code health & handover
 

@@ -161,6 +161,8 @@ export interface CongregationMember {
   phone: string;
   /** Normalised form of `phone` (e.g. "+2348031234567") used for matching */
   phone_normalized?: string;
+  /** Lower-case name, for search by name prefix */
+  name_lower?: string;
   email?: string;
   birthday?: string;
   address?: string;
@@ -211,6 +213,16 @@ export interface FollowUpContact {
   assigned_to: string; // uid of the worker
   campus?: "GLOBAL" | "BABCOCK";
   created_at?: Timestamp;
+  /**
+   * Summary of the latest follow-up log, kept up to date by logFollowUp()
+   * (app/dashboard/followup/actions.ts) so lists never need to load every log.
+   */
+  last_log_at?: Timestamp | string;
+  last_log_method?: FollowUpMethod;
+  last_log_notes?: string;
+  last_log_by?: string;
+  last_log_sunday?: string;
+  log_count?: number;
 }
 
 export interface FollowUpLog {

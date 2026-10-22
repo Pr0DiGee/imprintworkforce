@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import {
   LayoutDashboard,
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import React from "react";
 import { can } from "@/lib/permissions";
+import type { UserProfile } from "@/types";
 
 const CORE_LINKS = [
   { href: "/dashboard", id: "nav-dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -37,13 +37,12 @@ function isActive(pathname: string, href: string): boolean {
   return pathname.startsWith(href);
 }
 
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+export function SidebarNav({ user, onNavigate }: { user: UserProfile; onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { userProfile } = useAuth();
   const { theme, toggle } = useTheme();
-  const isAdmin = can(userProfile, "manageUsers");
-  const isPastorPlus = can(userProfile, "viewAllReports");
-  const showAttendance = can(userProfile, "manageAttendance");
+  const isAdmin = can(user, "manageUsers");
+  const isPastorPlus = can(user, "viewAllReports");
+  const showAttendance = can(user, "manageAttendance");
 
   const linkClasses = (href: string) => {
     const active = isActive(pathname, href);

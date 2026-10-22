@@ -10,6 +10,7 @@ import { serializeData } from "@/lib/serialize";
 import { useRouter } from "next/navigation";
 import { WeekPicker } from "@/components/WeekPicker";
 import { Printer } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 interface ReportsAllClientProps {
   targetSunday: string;
@@ -166,7 +167,7 @@ export function ReportsAllClient({
                   <div className="p-6 rounded-lg border bg-white no-print" style={{ borderColor: "var(--border-primary)" }}>
                     <div className="flex items-center gap-6 mb-6">
                       <div className="shrink-0">
-                        <img src="/logo.png" alt="Logo" width={60} height={60} className="object-contain" />
+                        <Logo size={60} alt="Logo" />
                       </div>
                       <div className="flex-1">
                         <h4 style={{ color: '#6b7280', fontWeight: 500, fontSize: '0.75rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
