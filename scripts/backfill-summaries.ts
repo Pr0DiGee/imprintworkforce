@@ -2,7 +2,8 @@
  * One-off backfill of fields the app now keeps up to date as it goes:
  *  - follow-up contacts: the "latest log" summary (last_log_at, last_log_method,
  *    last_log_notes, last_log_by, last_log_sunday, log_count), from their logs
- *  - congregation members: name_lower (search) and phone_normalized (matching)
+ *  - congregation members: name_lower (search), phone_normalized (matching), and
+ *    birthday reduced to "MM-DD" (birth years are not kept)
  *  - attendance: visit_number on every record (1st, 2nd, … visit, by date) and
  *    each member's attendance_count recounted from their actual records
  *
@@ -19,6 +20,7 @@ loadEnvConfig(process.cwd(), !production);
 import { FieldValue, type DocumentData } from "firebase-admin/firestore";
 import { getAdminDb } from "../lib/firebase/admin";
 import { normalizePhone } from "../lib/phone";
+import { normalizeBirthday } from "../lib/attendance";
 
 const PROD_ID = "imprintworkforce-49256";
 if ((process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === PROD_ID) !== production) {
@@ -79,6 +81,7 @@ if ((process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === PROD_ID) !== production) {
       batch.update(m.ref, {
         name_lower: String(data.name ?? "").toLowerCase(),
         phone_normalized: data.phone_normalized ?? normalizePhone(String(data.phone ?? "")) ?? null,
+        birthday: normalizeBirthday(data.birthday),
       });
     }
     await batch.commit();
