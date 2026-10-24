@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CheckCircle2, ArrowRight, CalendarClock } from "lucide-react";
+import { BirthdayInput } from "@/components/BirthdayInput";
 import {
   checkInRemembered,
   checkInByPhone,
@@ -173,15 +174,13 @@ export function CheckInClient({ isSunday, rememberedName }: CheckInClientProps) 
           <label className="block text-xs font-semibold mb-1 text-[var(--text-secondary)]">Email Address (Optional)</label>
           <input type="email" name="email" autoComplete="email" className={inputClass} style={inputStyle} />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold mb-1 text-[var(--text-secondary)]">Birthday (Optional)</label>
-            <input type="date" name="birthday" className={inputClass} style={inputStyle} />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1 text-[var(--text-secondary)]">Address (Optional)</label>
-            <input type="text" name="address" placeholder="City, Area" className={inputClass} style={inputStyle} />
-          </div>
+        <div>
+          <label className="block text-xs font-semibold mb-1 text-[var(--text-secondary)]">Birthday (Optional, day and month)</label>
+          <BirthdayInput className={inputClass} style={inputStyle} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold mb-1 text-[var(--text-secondary)]">Address (Optional)</label>
+          <input type="text" name="address" placeholder="City, Area" className={inputClass} style={inputStyle} />
         </div>
         <PrimaryButton loading={loading} loadingLabel="Checking in…" label={<><CheckCircle2 size={18} /> Complete Check-In</>} />
       </form>

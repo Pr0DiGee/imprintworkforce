@@ -175,6 +175,10 @@ export interface AttendanceRecord {
   id?: string;
   member_id: string;
   service_date: string; // ISO Sunday string
+  /** Which visit this was for the member (1 = first time), as of this Sunday */
+  visit_number?: number;
+  /** Staff uid when an usher/admin checked them in */
+  checked_in_by?: string;
   checked_in_at?: Timestamp;
 }
 

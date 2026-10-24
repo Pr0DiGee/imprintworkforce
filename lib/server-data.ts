@@ -5,7 +5,6 @@
  */
 import { cache } from "react";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { FieldPath } from "firebase-admin/firestore";
 import type {
   UserProfile,
   Report,
@@ -261,63 +260,35 @@ export async function fetchFollowUpContacts(): Promise<FollowUpContact[]> {
 
 // ─── Congregation / Attendance ─────────────────────────────────────────────────
 
-export const MEMBER_PAGE_SIZE = 50;
-
 function toMember(doc: FirebaseFirestore.DocumentSnapshot): CongregationMember {
   return { id: doc.id, ...serializeData(doc.data()) } as CongregationMember;
 }
 
-/** Attendance records for one Sunday and the members they belong to. */
-export async function fetchAttendanceForSunday(sunday: string): Promise<{
-  records: AttendanceRecord[];
-  members: CongregationMember[];
-}> {
-  const snap = await db().collection("attendance").where("service_date", "==", sunday).get();
-  const records = snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as AttendanceRecord));
-  const ids = Array.from(new Set(records.map((r) => r.member_id)));
+export type Attendee = CongregationMember & {
+  /** Which visit this Sunday was for them: 1 = first time, 2 = second, … */
+  visit_number: number;
+};
 
-  const members: CongregationMember[] = [];
+/** Everyone who checked in on one Sunday, with which visit it was for them. */
+export async function fetchAttendeesForSunday(sunday: string): Promise<Attendee[]> {
+  const snap = await db().collection("attendance").where("service_date", "==", sunday).get();
+  const visitByMember = new Map<string, number>();
+  snap.docs.forEach((doc) => {
+    const data = doc.data();
+    visitByMember.set(data.member_id, typeof data.visit_number === "number" ? data.visit_number : 0);
+  });
+
+  const ids = Array.from(visitByMember.keys());
+  const attendees: Attendee[] = [];
   for (let i = 0; i < ids.length; i += 100) {
     const refs = ids.slice(i, i + 100).map((id) => db().collection("congregation").doc(id));
     const docs = await db().getAll(...refs);
-    docs.filter((d) => d.exists).forEach((d) => members.push(toMember(d)));
+    docs.filter((doc) => doc.exists).forEach((doc) => {
+      const member = toMember(doc);
+      // Records from before visit numbers were stored fall back to the current total
+      const visit = visitByMember.get(doc.id) || member.attendance_count || 1;
+      attendees.push({ ...member, visit_number: visit });
+    });
   }
-  return { records, members };
-}
-
-export async function countMembers(): Promise<number> {
-  return (await db().collection("congregation").count().get()).data().count;
-}
-
-/** One page of the congregation, A→Z. Pass the last member of the previous page to continue. */
-export async function fetchMemberPage(after?: { name: string; id: string }): Promise<{
-  members: CongregationMember[];
-  hasMore: boolean;
-}> {
-  let q = db().collection("congregation").orderBy("name").orderBy(FieldPath.documentId()).limit(MEMBER_PAGE_SIZE + 1);
-  if (after) q = q.startAfter(after.name, after.id);
-  const snap = await q.get();
-  return {
-    members: snap.docs.slice(0, MEMBER_PAGE_SIZE).map(toMember),
-    hasMore: snap.size > MEMBER_PAGE_SIZE,
-  };
-}
-
-/** Search the congregation by the start of a name, or by phone number digits. */
-export async function searchMembers(query: string): Promise<CongregationMember[]> {
-  const q = query.trim();
-  if (q.length < 2) return [];
-  const col = db().collection("congregation");
-  const digits = q.replace(/\D/g, "");
-
-  let snap;
-  if (digits.length >= 4 && digits.length === q.replace(/[\s+()-]/g, "").length) {
-    // Phone: match the stored normalised number by prefix ("0803..." → "+234803...")
-    const prefix = digits.startsWith("234") ? `+${digits}` : digits.startsWith("0") ? `+234${digits.slice(1)}` : `+234${digits}`;
-    snap = await col.where("phone_normalized", ">=", prefix).where("phone_normalized", "<", prefix + "\uf8ff").limit(MEMBER_PAGE_SIZE).get();
-  } else {
-    const lower = q.toLowerCase();
-    snap = await col.where("name_lower", ">=", lower).where("name_lower", "<", lower + "\uf8ff").limit(MEMBER_PAGE_SIZE).get();
-  }
-  return snap.docs.map(toMember);
+  return attendees.sort((x, y) => x.name.localeCompare(y.name));
 }

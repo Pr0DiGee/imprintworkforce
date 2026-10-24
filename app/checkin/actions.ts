@@ -2,10 +2,10 @@
 
 import crypto from "crypto";
 import { cookies, headers } from "next/headers";
-import { FieldValue, type DocumentReference } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { getLagosToday } from "@/lib/date";
-import { firstName, legacyPhoneVariants, normalizePhone } from "@/lib/phone";
+import { normalizePhone } from "@/lib/phone";
+import { createMember, findMemberByPhone, normalizeBirthday, recordAttendance } from "@/lib/attendance";
 
 // Public check-in (no login). Rules for this flow:
 // - only works on Sundays, Lagos time; the date is decided here, never by the browser
@@ -57,53 +57,6 @@ async function withinRateLimit(): Promise<boolean> {
   return count <= RATE_LIMIT;
 }
 
-/** Find a member by phone, including records saved before numbers were normalised. */
-async function findMemberByPhone(normalized: string): Promise<DocumentReference | null> {
-  const col = getAdminDb().collection("congregation");
-
-  const match = await col.where("phone_normalized", "==", normalized).limit(1).get();
-  if (!match.empty) return match.docs[0].ref;
-
-  const legacy = await col.where("phone", "in", legacyPhoneVariants(normalized)).limit(1).get();
-  if (legacy.empty) return null;
-  // Backfill so the next lookup is a direct match
-  await legacy.docs[0].ref.update({ phone_normalized: normalized });
-  return legacy.docs[0].ref;
-}
-
-/** Record attendance once per Sunday and bump the member's visit count. */
-async function recordAttendance(memberRef: DocumentReference, name: string, sunday: string): Promise<CheckInResult> {
-  const db = getAdminDb();
-
-  // Records made before this change have random ids, so check for those too
-  const legacy = await db
-    .collection("attendance")
-    .where("member_id", "==", memberRef.id)
-    .where("service_date", "==", sunday)
-    .limit(1)
-    .get();
-  if (!legacy.empty) return { status: "already_checked_in", firstName: firstName(name) };
-
-  try {
-    await db.collection("attendance").doc(`${memberRef.id}_${sunday}`).create({
-      member_id: memberRef.id,
-      service_date: sunday,
-      checked_in_at: FieldValue.serverTimestamp(),
-    });
-  } catch (err: unknown) {
-    if ((err as { code?: number })?.code === 6) {
-      return { status: "already_checked_in", firstName: firstName(name) };
-    }
-    throw err;
-  }
-
-  await memberRef.update({
-    last_checkin: FieldValue.serverTimestamp(),
-    attendance_count: FieldValue.increment(1),
-  });
-  return { status: "checked_in", firstName: firstName(name) };
-}
-
 /** Check in the member this device remembers (from the cookie). */
 export async function checkInRemembered(): Promise<CheckInResult> {
   try {
@@ -119,7 +72,7 @@ export async function checkInRemembered(): Promise<CheckInResult> {
       (await cookies()).delete(MEMBER_COOKIE);
       return { status: "not_found" };
     }
-    return await recordAttendance(ref, snap.data()!.name ?? "", today.date);
+    return await recordAttendance(ref, today.date);
   } catch (error) {
     console.error("[checkInRemembered]", error);
     return { status: "error", message: "Check-in failed. Please try again." };
@@ -142,8 +95,7 @@ export async function checkInByPhone(phone: string): Promise<CheckInResult> {
     const ref = await findMemberByPhone(normalized);
     if (!ref) return { status: "not_found" };
 
-    const snap = await ref.get();
-    const result = await recordAttendance(ref, snap.data()?.name ?? "", today.date);
+    const result = await recordAttendance(ref, today.date);
     await rememberDevice(ref.id);
     return result;
   } catch (error) {
@@ -167,8 +119,9 @@ export async function registerAndCheckIn(formData: FormData): Promise<CheckInRes
     const normalized = normalizePhone(phone);
     if (!name) return { status: "error", message: "Please enter your name." };
     if (!normalized) return { status: "error", message: "Please enter a valid phone number." };
-    if (birthday && !/^\d{4}-\d{2}-\d{2}$/.test(birthday)) {
-      return { status: "error", message: "Please enter a valid birthday." };
+    const birthdayValue = birthday ? normalizeBirthday(birthday) : null;
+    if (birthday && !birthdayValue) {
+      return { status: "error", message: "Please choose a valid birthday (day and month)." };
     }
 
     if (!(await withinRateLimit())) {
@@ -178,26 +131,13 @@ export async function registerAndCheckIn(formData: FormData): Promise<CheckInRes
     // Number already registered: just check that member in, don't touch their details
     const existing = await findMemberByPhone(normalized);
     if (existing) {
-      const snap = await existing.get();
-      const result = await recordAttendance(existing, snap.data()?.name ?? "", today.date);
+      const result = await recordAttendance(existing, today.date);
       await rememberDevice(existing.id);
       return result;
     }
 
-    const ref = getAdminDb().collection("congregation").doc();
-    await ref.set({
-      name,
-      phone,
-      phone_normalized: normalized,
-      name_lower: name.toLowerCase(),
-      email: email || null,
-      birthday: birthday || null,
-      address: address || null,
-      created_at: FieldValue.serverTimestamp(),
-      attendance_count: 0,
-    });
-
-    const result = await recordAttendance(ref, name, today.date);
+    const ref = await createMember({ name, phone, phoneNormalized: normalized, email, birthday: birthdayValue, address });
+    const result = await recordAttendance(ref, today.date);
     await rememberDevice(ref.id);
     return result;
   } catch (error) {

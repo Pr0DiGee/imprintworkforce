@@ -41,7 +41,7 @@ export default async function AttendanceQRPage() {
           Welcome to Imprint Global Church
         </h1>
         <p className="text-lg text-center mb-10" style={{ color: "var(--text-secondary)" }}>
-          Scan this code to check in for today's service
+          Scan this code with your Phone Camera
         </p>
         
         <div className="bg-white p-4 rounded-xl inline-block mx-auto mb-8 shadow-md border" style={{ borderColor: "var(--border-primary)" }}>
