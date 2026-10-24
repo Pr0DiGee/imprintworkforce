@@ -30,6 +30,8 @@ export const PERMISSIONS = {
   manageAttendance: { roles: ["PASTOR", "LEAD_PASTOR", "ADMIN"], departments: ["USHERING"] },
   /** Switch follow-up campus; edit or delete any follow-up contact */
   manageAllFollowUps: { roles: ["PASTOR", "LEAD_PASTOR", "ADMIN"] },
+  /** Workers Check-In page: this week's check-up partners and who has done theirs */
+  viewCheckups: { roles: ["ADMIN"] },
 } as const satisfies Record<string, { roles: readonly AppRole[]; departments?: readonly Department[] }>;
 
 export type Permission = keyof typeof PERMISSIONS;

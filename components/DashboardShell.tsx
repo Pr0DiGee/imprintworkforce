@@ -10,9 +10,11 @@ import { LayoutDashboard, CheckSquare, FileText, UserCheck } from "lucide-react"
 
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 import type { UserProfile } from "@/types";
+import type { SidebarDots } from "@/lib/action-items";
+import { NavDot } from "@/components/NavDot";
 import { Logo } from "@/components/Logo";
 
-function MobileNavItem({ href, icon: Icon, label }: { href: string; icon: any; label: string }) {
+function MobileNavItem({ href, icon: Icon, label, dot = false }: { href: string; icon: any; label: string; dot?: boolean }) {
   const pathname = usePathname();
   const active = href === "/dashboard" ? pathname === href : pathname.startsWith(href);
   
@@ -22,13 +24,16 @@ function MobileNavItem({ href, icon: Icon, label }: { href: string; icon: any; l
       className={`flex flex-col items-center justify-center w-full py-2 transition-colors ${active ? "" : "hover:opacity-80"}`}
       style={{ color: active ? "var(--accent-text)" : "var(--text-muted)" }}
     >
-      <Icon size={20} strokeWidth={active ? 2.5 : 2} className="mb-1" />
+      <span className="relative mb-1">
+        <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+        <NavDot show={dot} className="absolute -top-0.5 -right-1" />
+      </span>
       <span className="text-[10px] font-medium">{label}</span>
     </Link>
   );
 }
 
-export function DashboardShell({ children, user }: { children: React.ReactNode; user: UserProfile }) {
+export function DashboardShell({ children, user, dots }: { children: React.ReactNode; user: UserProfile; dots: SidebarDots }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -50,10 +55,10 @@ export function DashboardShell({ children, user }: { children: React.ReactNode; 
           </h1>
         </div>
 
-        <SidebarNav user={user} />
+        <SidebarNav user={user} dots={dots} />
 
         <div className="px-4 py-4 space-y-2" style={{ borderTop: "1px solid var(--border-primary)" }}>
-          <SidebarUserInfo user={user} />
+          <SidebarUserInfo user={user} needsPhone={dots.profile} />
           <SignOutButton />
         </div>
       </aside>
@@ -75,13 +80,14 @@ export function DashboardShell({ children, user }: { children: React.ReactNode; 
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          className="p-1.5 rounded-md"
+          className="p-1.5 rounded-md relative"
           style={{ color: "var(--text-secondary)" }}
           aria-label="Open menu"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
+          <NavDot show={Object.values(dots).some(Boolean)} className="absolute top-1 right-1" />
         </button>
       </div>
 
@@ -119,10 +125,10 @@ export function DashboardShell({ children, user }: { children: React.ReactNode; 
           </button>
         </div>
 
-        <SidebarNav user={user} onNavigate={() => setMobileOpen(false)} />
+        <SidebarNav user={user} dots={dots} onNavigate={() => setMobileOpen(false)} />
 
         <div className="px-4 py-4 space-y-2" style={{ borderTop: "1px solid var(--border-primary)" }}>
-          <SidebarUserInfo user={user} />
+          <SidebarUserInfo user={user} needsPhone={dots.profile} />
           <SignOutButton />
         </div>
       </aside>
@@ -142,9 +148,9 @@ export function DashboardShell({ children, user }: { children: React.ReactNode; 
         }}
       >
         <MobileNavItem href="/dashboard" icon={LayoutDashboard} label="Home" />
-        <MobileNavItem href="/dashboard/tasks" icon={CheckSquare} label="Tasks" />
-        <MobileNavItem href="/dashboard/reports" icon={FileText} label="Reports" />
-        <MobileNavItem href="/dashboard/followup" icon={UserCheck} label="Follow-Up" />
+        <MobileNavItem href="/dashboard/tasks" icon={CheckSquare} label="Tasks" dot={dots.tasks} />
+        <MobileNavItem href="/dashboard/reports" icon={FileText} label="Reports" dot={dots.reports} />
+        <MobileNavItem href="/dashboard/followup" icon={UserCheck} label="Follow-Up" dot={dots.followup} />
       </nav>
     </div>
   );

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/DashboardShell";
 import { getServerUser } from "@/lib/server-auth";
+import { getActionSummary, sidebarDots } from "@/lib/action-items";
 
 // Loads the signed-in profile once per request (getServerUser is cached, so
 // the page reuses it) and hands it to the menu, so role-based links are
@@ -13,5 +14,6 @@ export default async function DashboardLayout({
   const user = await getServerUser();
   if (!user) redirect("/login");
 
-  return <DashboardShell user={user}>{children}</DashboardShell>;
+  const dots = sidebarDots(await getActionSummary(user));
+  return <DashboardShell user={user} dots={dots}>{children}</DashboardShell>;
 }

@@ -7,6 +7,7 @@ import { TableRow } from "@tiptap/extension-table-row";
 import { TableCell } from "@tiptap/extension-table-cell";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { Report, Department, ReportStatus } from "@/types";
@@ -35,6 +36,7 @@ export function ReportEditor({
   disabled = false,
   hideForwardButton = false,
 }: ReportEditorProps) {
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
@@ -137,6 +139,7 @@ export function ReportEditor({
       onSaved?.(updatedReport);
       setLastSaved(new Date());
       toast.success(status === "SUBMITTED" ? "Report submitted successfully" : "Draft saved successfully");
+      if (status === "SUBMITTED") router.refresh(); // clears the Reports dot and to-do
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save report.");
     } finally {

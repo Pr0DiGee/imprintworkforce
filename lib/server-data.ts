@@ -80,15 +80,15 @@ export async function fetchReportCountsByWeek(weeks: number): Promise<
 
 export async function fetchTasks(user: UserProfile): Promise<Task[]> {
   const col = db().collection("tasks");
-  let snap;
 
-  if (can(user, "viewAllTasks")) {
-    snap = await col.get();
-  } else {
-    snap = await col.where("assigned_to", "==", user.uid).get();
-  }
-
-  return snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as Task));
+  // Everyone sees tasks assigned to them (incl. personal ones). Pastors also see
+  // every task pastors assigned, but never other people's personal tasks.
+  const mine = col.where("assigned_to", "==", user.uid).get();
+  const assigned = can(user, "viewAllTasks") ? col.where("personal", "==", false).get() : null;
+  const snaps = await Promise.all([mine, assigned]);
+  const byId = new Map<string, Task>();
+  for (const s of snaps) s?.docs.forEach((d) => byId.set(d.id, { id: d.id, ...serializeData(d.data()) } as Task));
+  return Array.from(byId.values());
 }
 
 // ─── Feedback ──────────────────────────────────────────────────────────────────

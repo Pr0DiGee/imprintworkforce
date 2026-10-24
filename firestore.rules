@@ -53,6 +53,9 @@ service cloud.firestore {
     function canManageAllFollowUps() {
       return hasPermission(['PASTOR', 'LEAD_PASTOR', 'ADMIN'], []);
     }
+    function canViewCheckups() {
+      return hasPermission(['ADMIN'], []);
+    }
     // </generated:permissions>
 
     // ─── Users ─────────────────────────────────────────────────────────
@@ -100,18 +103,39 @@ service cloud.firestore {
     }
 
     // ─── Tasks ─────────────────────────────────────────────────────────
+    // Personal tasks (personal == true) are private to their owner and are
+    // created/edited/deleted by server actions; the owner may tick them here.
+    function isPersonalTask(data) {
+      return data.get('personal', false) == true;
+    }
+
     match /tasks/{taskId} {
-      // Everyone sees tasks assigned to them; some roles see all tasks
-      allow read: if canViewAllTasks()
+      // Everyone sees tasks assigned to them; some roles also see every
+      // non-personal task (pastor-assigned), never other people's personal ones
+      allow read: if (canViewAllTasks() && !isPersonalTask(resource.data))
                   || (isAuth() && resource.data.assigned_to == uid());
 
-      allow create, delete: if canAssignTasks();
+      allow create: if canAssignTasks() && !isPersonalTask(request.resource.data);
+      allow delete: if canAssignTasks() && !isPersonalTask(resource.data);
 
-      // Assigners can update any task; the assignee can only change the status
-      allow update: if canAssignTasks()
+      // Assigners can update assigned tasks; the assignee can only change the status
+      allow update: if (canAssignTasks() && !isPersonalTask(resource.data) && !isPersonalTask(request.resource.data))
                     || (isAuth()
                         && resource.data.assigned_to == uid()
                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+    }
+
+    // ─── Server-only collections ───────────────────────────────────────
+    // Phone numbers (only revealed by the server to that week's check-up
+    // partner) and the weekly check-up records. No browser access.
+    match /user_private/{uid} {
+      allow read, write: if false;
+    }
+    match /checkup_tasks/{id} {
+      allow read, write: if false;
+    }
+    match /checkup_weeks/{id} {
+      allow read, write: if false;
     }
 
     // ─── Roster ────────────────────────────────────────────────────────
@@ -190,10 +214,11 @@ service cloud.firestore {
       allow update, delete: if isAuth() && resource.data.worker_id == uid();
     }
 
-    // Admin super-user: full access everywhere except reports, whose 24-hour
-    // lock must hold for everyone (admins write reports via the rules above).
+    // Admin super-user: full access everywhere except reports (24-hour lock
+    // holds for everyone), tasks (personal tasks stay private) and private
+    // profile data (phone numbers). Admins use the specific rules above for those.
     match /{collection}/{document=**} {
-      allow read, write: if canManageUsers() && collection != 'reports';
+      allow read, write: if canManageUsers() && !(collection in ['reports', 'tasks', 'user_private']);
     }
   }
 }

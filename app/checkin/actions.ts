@@ -72,7 +72,9 @@ export async function checkInRemembered(): Promise<CheckInResult> {
       (await cookies()).delete(MEMBER_COOKIE);
       return { status: "not_found" };
     }
-    return await recordAttendance(ref, today.date);
+    const result = await recordAttendance(ref, today.date);
+    await rememberDevice(ref.id); // renew for another year, so regulars are never asked again
+    return result;
   } catch (error) {
     console.error("[checkInRemembered]", error);
     return { status: "error", message: "Check-in failed. Please try again." };

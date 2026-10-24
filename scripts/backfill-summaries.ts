@@ -6,6 +6,7 @@
  *    birthday reduced to "MM-DD" (birth years are not kept)
  *  - attendance: visit_number on every record (1st, 2nd, … visit, by date) and
  *    each member's attendance_count recounted from their actual records
+ *  - tasks: personal = false on tasks created before personal tasks existed
  *
  *   npx tsx scripts/backfill-summaries.ts                # DEV project
  *   npx tsx scripts/backfill-summaries.ts --production   # PRODUCTION (.env.local)
@@ -119,5 +120,15 @@ if ((process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === PROD_ID) !== production) {
     await b.commit();
   }
   console.log(`${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}: numbered ${attendance.size} attendance records for ${byMember.size} members.`);
+  // Tasks: mark pre-existing tasks as not personal (pastors query personal == false)
+  const tasks = await db.collection("tasks").get();
+  const unmarked = tasks.docs.filter((t) => typeof t.data().personal !== "boolean");
+  for (let i = 0; i < unmarked.length; i += 400) {
+    const b = db.batch();
+    unmarked.slice(i, i + 400).forEach((t) => b.update(t.ref, { personal: false }));
+    await b.commit();
+  }
+  console.log(`${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}: marked ${unmarked.length} existing tasks as not personal.`);
+
   process.exit(0);
 })();

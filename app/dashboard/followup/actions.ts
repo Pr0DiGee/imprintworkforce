@@ -119,7 +119,7 @@ export async function logFollowUp(
     await batch.commit();
 
     revalidatePath("/dashboard/followup");
-    revalidatePath("/dashboard");
+    revalidatePath("/dashboard", "layout");
     return { success: true };
   } catch (err) {
     console.error("[logFollowUp]", err);
@@ -138,4 +138,45 @@ export async function getFollowUpHistory(contactId: string): Promise<FollowUpLog
     .limit(100)
     .get();
   return snap.docs.map((d) => ({ id: d.id, ...serializeData(d.data()) } as FollowUpLog));
+}
+
+/** How long after writing a follow-up log its author may still edit it. */
+const LOG_EDIT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Edit your own most recent log for a contact (method and notes), within
+ * 7 days of writing it. Updates the log and the contact's summary together.
+ */
+export async function editLatestFollowUp(
+  contactId: string,
+  method: FollowUpMethod,
+  notes: string
+): Promise<{ success: true } | { error: string }> {
+  const user = await getServerUser();
+  if (!user) return { error: "Unauthorized" };
+  if (!contactId || contactId.includes("/")) return { error: "Invalid contact" };
+  if (!FOLLOW_UP_METHODS.includes(method)) return { error: "Invalid method" };
+
+  try {
+    const db = getAdminDb();
+    const latest = await db.collection("followup_logs").where("contact_id", "==", contactId).orderBy("logged_at", "desc").limit(1).get();
+    const log = latest.docs[0];
+    if (!log || log.data().worker_id !== user.uid) return { error: "You can only edit your own latest follow-up." };
+    const loggedAt = log.data().logged_at?.toDate?.() as Date | undefined;
+    if (!loggedAt || Date.now() - loggedAt.getTime() > LOG_EDIT_WINDOW_MS) {
+      return { error: "Follow-ups can only be edited within 7 days." };
+    }
+
+    const trimmed = String(notes ?? "").trim().slice(0, 2000);
+    const batch = db.batch();
+    batch.update(log.ref, { method, notes: trimmed, edited_at: FieldValue.serverTimestamp() });
+    batch.update(db.collection("followup_contacts").doc(contactId), { last_log_method: method, last_log_notes: trimmed });
+    await batch.commit();
+
+    revalidatePath("/dashboard/followup");
+    return { success: true };
+  } catch (err) {
+    console.error("[editLatestFollowUp]", err);
+    return { error: "Couldn't save your changes." };
+  }
 }

@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { GlobalFollowUpTable } from "@/components/GlobalFollowUpTable";
 import { formatRelativeCheckInDate, toJsDate } from "@/lib/date";
 import { FollowUpHistory, latestLogOf } from "@/components/FollowUpHistory";
-import { logFollowUp } from "./actions";
+import { logFollowUp, editLatestFollowUp } from "./actions";
 
 interface FollowUpClientProps {
   user: UserProfile;
@@ -209,18 +209,35 @@ function ContactCard({
   const [logMethod, setLogMethod] = useState<FollowUpMethod>("CALL");
   const [logNotes, setLogNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [editingLast, setEditingLast] = useState(false);
   const router = useRouter();
+
+  // Your own latest log can be edited for 7 days after you wrote it
+  const [openedAt] = useState(() => Date.now());
+  const lastLoggedAt = toJsDate(latestLog?.logged_at);
+  const canEditLast =
+    !readOnly && latestLog?.worker_id === user.uid && lastLoggedAt !== null && openedAt - lastLoggedAt.getTime() < 7 * 864e5;
+
+  const startEditLast = () => {
+    setLogMethod(latestLog?.method ?? "CALL");
+    setLogNotes(latestLog?.notes ?? "");
+    setEditingLast(true);
+    setLogging(true);
+  };
 
   const handleLog = async () => {
     if (!contact.id) return;
     setSubmitting(true);
-    const res = await logFollowUp(contact.id, logMethod, logNotes);
+    const res = editingLast
+      ? await editLatestFollowUp(contact.id, logMethod, logNotes)
+      : await logFollowUp(contact.id, logMethod, logNotes);
     if ("error" in res) {
       toast.error(res.error);
       setSubmitting(false);
       return;
     }
-    toast.success("Follow-up logged successfully");
+    toast.success(editingLast ? "Follow-up updated" : "Follow-up logged successfully");
+    setEditingLast(false);
     setLogging(false);
     setLogNotes("");
     setSubmitting(false);
@@ -335,7 +352,7 @@ function ContactCard({
               />
               <div className="flex gap-2">
                 <button
-                  onClick={() => setLogging(false)}
+                  onClick={() => { setLogging(false); setEditingLast(false); setLogNotes(""); }}
                   className="flex-1 py-1.5 text-xs font-medium rounded"
                   style={{ background: "var(--bg-input)" }}
                   disabled={submitting}
@@ -348,7 +365,7 @@ function ContactCard({
                   style={{ background: "var(--accent)" }}
                   disabled={submitting}
                 >
-                  {submitting ? "Saving..." : "Save Log"}
+                  {submitting ? "Saving..." : editingLast ? "Save Changes" : "Save Log"}
                 </button>
               </div>
             </div>
@@ -359,6 +376,11 @@ function ContactCard({
                   {latestLog ? (
                     <span>
                       Last: {latestLog.methodLabel} • {formatRelativeCheckInDate(latestLog.logged_at)}
+                      {canEditLast && (
+                        <button type="button" onClick={startEditLast} className="ml-2 font-medium underline underline-offset-2" style={{ color: "var(--accent)" }}>
+                          Edit
+                        </button>
+                      )}
                     </span>
                   ) : (
                     <span>No activity yet</span>

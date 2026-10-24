@@ -13,6 +13,7 @@ import {
   StickyNote,
   UserCheck,
   Settings,
+  HeartHandshake,
   Sun,
   Moon,
   MapPin
@@ -20,6 +21,8 @@ import {
 import React from "react";
 import { can } from "@/lib/permissions";
 import type { UserProfile } from "@/types";
+import type { SidebarDots } from "@/lib/action-items";
+import { NavDot } from "@/components/NavDot";
 
 const CORE_LINKS = [
   { href: "/dashboard", id: "nav-dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -37,7 +40,15 @@ function isActive(pathname: string, href: string): boolean {
   return pathname.startsWith(href);
 }
 
-export function SidebarNav({ user, onNavigate }: { user: UserProfile; onNavigate?: () => void }) {
+/** Which sidebar links show a "needs attention" dot */
+const DOT_FOR_HREF: Record<string, keyof SidebarDots> = {
+  "/dashboard/tasks": "tasks",
+  "/dashboard/reports": "reports",
+  "/dashboard/feedback": "feedback",
+  "/dashboard/followup": "followup",
+};
+
+export function SidebarNav({ user, dots, onNavigate }: { user: UserProfile; dots: SidebarDots; onNavigate?: () => void }) {
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
   const isAdmin = can(user, "manageUsers");
@@ -76,7 +87,8 @@ export function SidebarNav({ user, onNavigate }: { user: UserProfile; onNavigate
           aria-current={isActive(pathname, href) ? "page" : undefined}
         >
           <Icon size={18} className="shrink-0" />
-          {label}
+          <span className="flex-1">{label}</span>
+          <NavDot show={Boolean(DOT_FOR_HREF[href] && dots[DOT_FOR_HREF[href]])} />
         </Link>
       ))}
 
@@ -126,6 +138,17 @@ export function SidebarNav({ user, onNavigate }: { user: UserProfile; onNavigate
       {isAdmin && (
         <>
           <div className="my-3" style={{ borderTop: "1px solid var(--border-primary)" }} />
+          <Link
+            href="/dashboard/checkups"
+            id="nav-checkups"
+            className={linkClasses("/dashboard/checkups")}
+            style={linkStyle("/dashboard/checkups")}
+            onClick={onNavigate}
+            aria-current={isActive(pathname, "/dashboard/checkups") ? "page" : undefined}
+          >
+            <HeartHandshake size={18} className="shrink-0" />
+            Workers Check-In
+          </Link>
           <Link
             href="/dashboard/admin"
             id="nav-admin"

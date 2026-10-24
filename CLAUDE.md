@@ -64,6 +64,13 @@ Reports lock 24 hours after submission for everyone, admins included (`reportLoc
 - **Notes / History**: counts come from Firestore `count()` aggregations, not downloaded documents.
 - `scripts/backfill-summaries.ts` recomputes the stored summaries, search fields and attendance visit numbers/counts (dev by default, `--production` for prod); `scripts/seed-volume.ts` fills dev with realistic volume.
 
+### Weekly check-ups, to-dos and sidebar dots
+- **Check-up partners** (`lib/checkups.ts`): every Monday the cron pairs everyone except admins (odd count → one ring of three), avoiding partners from the last 4 weeks. One `checkup_tasks/{monday}_{checker}` per person; `checkup_weeks/{monday}` is created in the same batch so a re-run does nothing, and pushes are claimed once via `claimPushKey`. Unfinished check-ups show for 4 weeks. Admin-only page `/dashboard/checkups` shows the current week only. Monday's cron also pushes report reminders to departments that haven't submitted.
+- **To-dos** (`lib/action-items.ts`, `getActionSummary`): automatic, un-tickable items computed per request: department report not submitted, feedback not sent (both due Monday 8pm Lagos), contacts not followed up this week (Wednesday 8pm). Overdue is computed on read (`weeklyDeadlines`), not by cron. The same summary drives the **sidebar dots** (layout → `DashboardShell`); server actions call `revalidatePath("/dashboard", "layout")` and client saves call `router.refresh()` so dots update.
+- **Tasks**: `personal: true` tasks are created/edited/deleted by server actions (`app/dashboard/tasks/actions.ts`) and are private to their owner; pastors/admins (`viewAllTasks`) see only `personal == false` tasks. Every new task must set `personal`.
+- **Phone numbers** live in server-only `user_private/{uid}` (`lib/private-profile.ts`); only the current week's check-up partner is ever shown one. Browsers (admins included) can't read that collection.
+- **Follow-up edits**: `editLatestFollowUp` lets the author edit method/notes of their latest log for a contact within 7 days.
+
 ### Deletes
 Deleting a user (`DELETE /api/admin/users`) deletes tasks assigned to them, their notes and push subscriptions, and clears their roster/devotion slots, then the account. Deleting a follow-up contact goes through `app/dashboard/followup/actions.ts` and removes its logs too. Batch helpers: `lib/server-cleanup.ts`.
 

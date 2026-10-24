@@ -123,6 +123,8 @@ export interface Task {
   id?: string;
   assigned_to: string; // uid
   assigned_by: string; // uid
+  /** A task someone set for themselves: private, and not visible to pastors */
+  personal?: boolean;
   description: string;
   status: TaskStatus;
   deadline: Timestamp;

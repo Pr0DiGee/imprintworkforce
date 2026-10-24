@@ -157,3 +157,28 @@ export function getLagosToday(now: Date = new Date()): { date: string; isSunday:
 }
 
 export { parseISO, format, isBefore, isAfter, isSameDay };
+
+/** The Monday that starts the current check-up week (Mon–Sun), in Lagos time. */
+export function getCurrentWeekMonday(now: Date = new Date()): string {
+  const { date } = getLagosToday(now);
+  const d = parseISO(date);
+  const sinceMonday = (d.getDay() + 6) % 7; // Mon=0 … Sun=6
+  return format(addDays(d, -sinceMonday), "yyyy-MM-dd");
+}
+
+/** A moment on a given date at a given hour, Lagos time (UTC+1, no daylight saving). */
+export function lagosTime(date: string, hour: number, minute = 0): Date {
+  return new Date(`${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+01:00`);
+}
+
+/**
+ * Deadlines for the weekly to-dos, all relative to the target Sunday:
+ * report and feedback by Monday 8pm, follow-ups by Wednesday 8pm.
+ */
+export function weeklyDeadlines(targetSunday: string) {
+  return {
+    report: lagosTime(format(addDays(parseISO(targetSunday), 1), "yyyy-MM-dd"), 20),
+    feedback: lagosTime(format(addDays(parseISO(targetSunday), 1), "yyyy-MM-dd"), 20),
+    followUp: lagosTime(format(addDays(parseISO(targetSunday), 3), "yyyy-MM-dd"), 20),
+  };
+}

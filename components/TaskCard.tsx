@@ -6,7 +6,8 @@ import { db } from "@/lib/firebase/client";
 import { Task, TaskStatus } from "@/types";
 import { toast } from "sonner";
 import { Avatar } from "@/components/Avatar";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
+import { deletePersonalTask } from "@/app/dashboard/tasks/actions";
 import { notifyEvent } from "@/lib/client-notifications";
 import { toJsDate } from "@/lib/date";
 
@@ -24,6 +25,8 @@ interface TaskCardProps {
   assignedByName: string;
   isAssignee: boolean;
   canDelete?: boolean;
+  /** Personal tasks only: open the edit form */
+  onEdit?: () => void;
   onUpdate?: () => void;
 }
 
@@ -33,6 +36,7 @@ export function TaskCard({
   assignedByName,
   isAssignee,
   canDelete = false,
+  onEdit,
   onUpdate,
 }: TaskCardProps) {
   const [status, setStatus] = useState<TaskStatus>(task.status);
@@ -66,7 +70,12 @@ export function TaskCard({
     if (!task.id) return;
     setUpdating(true);
     try {
-      await deleteDoc(doc(db, "tasks", task.id));
+      if (task.personal) {
+        const res = await deletePersonalTask(task.id);
+        if ("error" in res) throw new Error(res.error);
+      } else {
+        await deleteDoc(doc(db, "tasks", task.id));
+      }
       toast.success("Task deleted");
       onUpdate?.();
     } catch (err) {
@@ -123,6 +132,18 @@ export function TaskCard({
           >
             {STATUS_LABELS[status]}
           </span>
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="p-1 rounded-md transition-colors hover:opacity-80"
+              style={{ color: "var(--text-secondary)" }}
+              title="Edit task"
+              aria-label="Edit task"
+            >
+              <Pencil size={14} />
+            </button>
+          )}
           {canDelete && (
             <button
               type="button"

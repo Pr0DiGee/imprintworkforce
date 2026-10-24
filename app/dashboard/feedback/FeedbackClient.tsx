@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { doc, getDoc, getDocs, collection, query, where, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { Feedback, UserProfile } from "@/types";
@@ -27,6 +28,7 @@ export function FeedbackClient({
   usersMap,
   isPastor,
 }: FeedbackClientProps) {
+  const router = useRouter();
   const [targetSunday, setTargetSunday] = useState(currentSunday);
   const isReadOnly = targetSunday !== currentSunday;
 
@@ -104,6 +106,7 @@ export function FeedbackClient({
       });
       
       toast.success(isNew ? "Feedback submitted" : "Feedback updated");
+      if (isNew) router.refresh(); // clears the Feedback dot and to-do
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to submit feedback.");
     } finally {

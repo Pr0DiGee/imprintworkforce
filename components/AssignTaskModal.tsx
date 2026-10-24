@@ -53,6 +53,7 @@ export function AssignTaskModal({
       const taskRef = await addDoc(collection(db, "tasks"), {
         assigned_to: assignedTo,
         assigned_by: assignedByUid,
+        personal: false,
         description: description.trim(),
         status: "ASSIGNED",
         deadline: Timestamp.fromDate(deadlineDate),

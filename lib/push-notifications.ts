@@ -117,3 +117,18 @@ export async function sendPushNotification({
 
   return { success: successCount, failed: failCount };
 }
+
+/**
+ * Claim a one-time key for a notification (server-only `push_events`).
+ * Returns false if it was already claimed, so callers can skip re-sending:
+ * a retried or re-run job never pings anyone twice.
+ */
+export async function claimPushKey(key: string, data: Record<string, unknown> = {}): Promise<boolean> {
+  try {
+    await getAdminDb().collection("push_events").doc(key).create({ ...data, sent_at: new Date() });
+    return true;
+  } catch (err: unknown) {
+    if ((err as { code?: number })?.code === 6) return false;
+    throw err;
+  }
+}

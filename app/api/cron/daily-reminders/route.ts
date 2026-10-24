@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendTaskReminders, sendDevotionReminders, sendRosterReminders, cleanupExpiredRateLimits } from "@/lib/server-crons";
+import { createWeeklyCheckups, sendReportReminders } from "@/lib/checkups";
 
 export async function GET(req: Request) {
   try {
@@ -21,6 +22,13 @@ export async function GET(req: Request) {
     const now = new Date();
     const formatter = new Intl.DateTimeFormat("en-US", { timeZone: "Africa/Lagos", weekday: "short" });
     const weekday = formatter.format(now); // e.g. "Sat"
+
+    if (weekday === "Mon") {
+      // Monday: draw this week's check-up partners, and remind departments
+      // whose Sunday report isn't in (due 8pm tonight). Both are safe to re-run.
+      await createWeeklyCheckups(now);
+      await sendReportReminders(now);
+    }
 
     if (weekday === "Sat") {
       // 2. Roster Reminders run ONLY ON SATURDAY (day 6)

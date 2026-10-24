@@ -3,6 +3,8 @@
 import { getServerUser } from "@/lib/server-auth";
 import { getAdminDb, getAdminStorage } from "@/lib/firebase/admin";
 import { revalidatePath } from "next/cache";
+import { normalizePhone } from "@/lib/phone";
+import { setPrivatePhone } from "@/lib/private-profile";
 
 export async function updateProfile(formData: FormData) {
   const user = await getServerUser();
@@ -71,5 +73,25 @@ export async function updateProfile(formData: FormData) {
   } catch (e) {
     console.error("Failed to update profile:", e);
     return { error: "Failed to update profile in database." };
+  }
+}
+
+/**
+ * Save (or clear) your phone number. Stored privately in user_private/{uid};
+ * only your check-up partner for the current week is ever shown it.
+ */
+export async function savePhoneNumber(phone: string): Promise<{ success: true } | { error: string }> {
+  const user = await getServerUser();
+  if (!user) return { error: "Unauthorized" };
+  const raw = String(phone ?? "").trim().slice(0, 30);
+  const normalized = raw ? normalizePhone(raw) : null;
+  if (raw && !normalized) return { error: "Please enter a valid phone number." };
+  try {
+    await setPrivatePhone(user.uid, raw || null, normalized);
+    revalidatePath("/dashboard", "layout");
+    return { success: true };
+  } catch (e) {
+    console.error("Failed to save phone:", e);
+    return { error: "Couldn't save your phone number." };
   }
 }
