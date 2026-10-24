@@ -5,7 +5,6 @@ import { getServerUser } from "@/lib/server-auth";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { sendPushNotification } from "@/lib/push-notifications";
 import { can } from "@/lib/permissions";
-import { ROSTER_DUTIES, ROSTER_DUTY_LABELS, type RosterDuty } from "@/types";
 import type { PushEvent } from "@/lib/client-notifications";
 
 // Event-based push: the client reports what it just did, and the server loads
@@ -27,7 +26,6 @@ class Rejected extends Error {
   }
 }
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Lagos" });
@@ -75,58 +73,6 @@ async function resolveEvent(
       };
     }
 
-    case "ROSTER_ASSIGNED": {
-      if (!DATE_RE.test(event.serviceDate) || !ROSTER_DUTIES.includes(event.duty)) {
-        throw new Rejected("Invalid roster slot", 400);
-      }
-      if (!can(caller, "editRoster")) throw new Rejected("You cannot edit the roster");
-
-      const snap = await db.collection("roster").doc(`${event.serviceDate}_${event.duty}`).get();
-      const slot = snap.data();
-      if (!slot?.assigned_to) throw new Rejected("Roster slot is empty", 404);
-
-      return {
-        key: `ROSTER_${event.serviceDate}_${event.duty}_${slot.assigned_to}`,
-        uid: slot.assigned_to,
-        title: "Sunday Roster Duty",
-        body: `You have been scheduled for ${ROSTER_DUTY_LABELS[event.duty as RosterDuty]} on Sunday (${event.serviceDate})`,
-        url: "/dashboard/roster",
-      };
-    }
-
-    case "DEVOTION_ASSIGNED":
-    case "DEVOTION_NOTES_UPDATED": {
-      if (!DATE_RE.test(event.date)) throw new Rejected("Invalid date", 400);
-      if (!can(caller, "editDevotion")) throw new Rejected("You cannot edit the devotion schedule");
-
-      const snap = await db.collection("devotion").doc(event.date).get();
-      const devotion = snap.data();
-      if (!devotion?.assigned_to) throw new Rejected("No teacher assigned for this day", 404);
-
-      if (event.type === "DEVOTION_ASSIGNED") {
-        return {
-          key: `DEVOTION_ASSIGNED_${event.date}_${devotion.assigned_to}`,
-          uid: devotion.assigned_to,
-          title: "Devotion Schedule",
-          body: `You are scheduled to lead devotion on ${event.date}`,
-          url: "/dashboard/devotion",
-        };
-      }
-
-      if (devotion.last_edited_by !== caller.uid) {
-        throw new Rejected("You did not make the latest edit");
-      }
-      // One notification per saved edit: the key changes with every save
-      const editedAt = (devotion.updated_at as Timestamp | undefined)?.toMillis() ?? 0;
-      return {
-        key: `DEVOTION_NOTES_${event.date}_${editedAt}`,
-        uid: devotion.assigned_to,
-        title: "Devotion Notes Updated",
-        body: `Teaching notes for devotion on ${event.date} have been updated`,
-        url: "/dashboard/devotion",
-      };
-    }
-
     default:
       throw new Rejected("Unknown event", 400);
   }
@@ -167,6 +113,8 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await sendPushNotification({
+      type: event.type,
+      triggeredBy: user.uid,
       uids: [push.uid],
       title: push.title,
       body: push.body,

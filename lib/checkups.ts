@@ -108,6 +108,7 @@ export async function createWeeklyCheckups(now: Date = new Date()) {
   for (const a of assignments) {
     if (!(await claimPushKey(`CHECKUP_${monday}_${a.checker}`, { recipient: a.checker }))) continue;
     await sendPushNotification({
+      type: "CHECKUP_PARTNER",
       uids: [a.checker],
       title: "Your check-up partner this week",
       body: `Check up on ${names[a.target] ?? "your partner"} this week.`,
@@ -140,6 +141,7 @@ export async function sendReportReminders(now: Date = new Date()) {
     for (const u of users.filter((x) => (x.departments ?? []).includes(dept))) {
       if (!(await claimPushKey(`REPORT_REMINDER_${sunday}_${dept}_${u.uid}`, { recipient: u.uid }))) continue;
       await sendPushNotification({
+        type: "REPORT_REMINDER",
         uids: [u.uid],
         title: "Department report due tonight",
         body: `The ${DEPARTMENT_LABELS[dept]} report for Sunday hasn't been submitted yet. It's due by 8pm today.`,

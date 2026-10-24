@@ -14,7 +14,6 @@ import { getShortDayLabel } from "@/lib/date";
 import { Avatar } from "@/components/Avatar";
 import { toast } from "sonner";
 import { Printer } from "lucide-react";
-import { notifyEvent } from "@/lib/client-notifications";
 
 interface RosterClientProps {
   user: UserProfile;
@@ -99,13 +98,6 @@ export function RosterClient({
       setEditMode(false);
       toast.success("Roster saved successfully");
 
-      // Notify newly assigned workers
-      const newlyAssigned = Object.entries(selections)
-        .filter(([duty, uid]) => uid && uid !== user.uid && currentSlots[duty as RosterDuty]?.assigned_to !== uid);
-
-      for (const [duty, uid] of newlyAssigned) {
-        notifyEvent({ type: "ROSTER_ASSIGNED", serviceDate: targetSunday, duty: duty as RosterDuty });
-      }
     } catch (err) {
       toast.error("Failed to save roster.");
     } finally {

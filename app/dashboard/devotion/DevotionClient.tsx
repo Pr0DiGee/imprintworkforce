@@ -10,7 +10,6 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { ToolbarBtn } from "@/components/ToolbarBtn";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { notifyEvent } from "@/lib/client-notifications";
 import { serializeData } from "@/lib/serialize";
 
 // ─── Inline Editor ─────────────────────────────────────────────────────────────
@@ -198,10 +197,6 @@ export function DevotionClient({
         updated_at: serverTimestamp(),
       }, { merge: true });
 
-      // If assigned_to changed to someone else, alert the newly assigned teacher
-      if (updates.assigned_to && updates.assigned_to !== existing.assigned_to && updates.assigned_to !== user.uid) {
-        notifyEvent({ type: "DEVOTION_ASSIGNED", date });
-      }
       return true;
     } catch {
       setDevotions(prev => {
@@ -251,11 +246,6 @@ export function DevotionClient({
     if (!saved) return; // keep the editor open so nothing typed is lost
     toast.success("Teaching notes saved");
 
-    // If edited by someone other than the assigned teacher, alert the assigned teacher
-    const currentTeacher = devotions[date]?.assigned_to;
-    if (currentTeacher && currentTeacher !== user.uid) {
-      notifyEvent({ type: "DEVOTION_NOTES_UPDATED", date });
-    }
 
     setExpandedDate(null);
   };

@@ -1,8 +1,9 @@
 import { getAdminDb } from "@/lib/firebase/admin";
-import { formatTargetSunday } from "@/lib/date";
+import { formatTargetSunday, getLagosToday, getTargetSundayString } from "@/lib/date";
 import { DevotionDaily, Task, ROSTER_DUTY_LABELS, Roster } from "@/types";
 import { Timestamp } from "firebase-admin/firestore";
-import { sendPushNotification } from "@/lib/push-notifications";
+import { sendPushNotification, claimPushKey } from "@/lib/push-notifications";
+import { addDays, format, parseISO } from "date-fns";
 
 function getISODateOffset(daysOffset: number): string {
   const d = new Date();
@@ -63,6 +64,7 @@ export async function sendTaskReminders() {
         : `You have ${tList.length} task(s) due soon or overdue.`;
 
       await sendPushNotification({
+        type: "TASK_REMINDER",
         uids: [userId],
         title: "Task Reminder",
         body: summary,
@@ -75,43 +77,66 @@ export async function sendTaskReminders() {
   }
 }
 
-export async function sendDevotionReminders() {
+/**
+ * Devotion (Mon–Sat): remind the teacher the day before ("tomorrow") and on
+ * the day ("today"). Runs every day; each reminder is claimed once.
+ */
+export async function sendDevotionReminders(now: Date = new Date()) {
   console.log("[CRON] Running Devotion Reminders via Web Push");
   try {
     const db = getAdminDb();
-    
-    // Remind for tomorrow only
-    const tomorrow = getISODateOffset(1);
-    const dates = [tomorrow];
+    const today = getLagosToday(now).date;
+    const tomorrow = format(addDays(parseISO(today), 1), "yyyy-MM-dd");
 
-    const devotionSnap = await db
-      .collection("devotion")
-      .where("date", "in", dates)
-      .get();
-      
-    if (devotionSnap.empty) {
-      console.log("No devotions found for tomorrow.");
-      return;
-    }
-
-    const devotions = devotionSnap.docs.map(doc => doc.data() as DevotionDaily);
-
-    for (const devotion of devotions) {
-      // Alert only the assigned teacher (skipping backup teacher as requested)
+    const snap = await db.collection("devotion").where("date", "in", [today, tomorrow]).get();
+    for (const doc of snap.docs) {
+      const devotion = doc.data() as DevotionDaily;
       if (!devotion.assigned_to) continue;
+      const when = devotion.date === today ? "today" : "tomorrow";
+      if (!(await claimPushKey(`DEVOTION_${when.toUpperCase()}_${devotion.date}_${devotion.assigned_to}`, { recipient: devotion.assigned_to }))) continue;
 
-      const topicStr = devotion.topic ? `Topic: ${devotion.topic}` : "Topic not set yet";
-
+      const topic = devotion.topic ? ` Topic: ${devotion.topic}` : " The topic isn't set yet.";
       await sendPushNotification({
+        type: "DEVOTION_REMINDER",
         uids: [devotion.assigned_to],
-        title: "Devotion Tomorrow",
-        body: `You are leading devotion tomorrow (${devotion.date}). ${topicStr}`,
+        title: when === "today" ? "You're taking devotion today" : "Devotion tomorrow",
+        body: when === "today" ? `You're leading devotion today at 8pm.${topic}` : `You're leading devotion tomorrow (${devotion.date}).${topic}`,
         url: "/dashboard/devotion",
       });
     }
-    console.log(`[CRON] Devotion reminders pushed for ${devotions.length} schedule(s).`);
   } catch (error) {
     console.error("Cron Error (Devotion):", error);
+  }
+}
+
+/** Tuesday: "You have N contacts to follow up", to people with contacts not logged this week. */
+export async function sendFollowUpReminders(now: Date = new Date()) {
+  console.log("[CRON] Running Follow-Up Reminders via Web Push");
+  try {
+    const db = getAdminDb();
+    const sunday = getTargetSundayString(now);
+    const [contacts, users] = await Promise.all([db.collection("followup_contacts").get(), db.collection("users").get()]);
+    const existing = new Set(users.docs.map((d) => d.id));
+
+    const pending = new Map<string, number>();
+    for (const c of contacts.docs) {
+      const data = c.data();
+      if (!existing.has(data.assigned_to) || data.last_log_sunday === sunday) continue;
+      pending.set(data.assigned_to, (pending.get(data.assigned_to) ?? 0) + 1);
+    }
+
+    for (const [uid, count] of pending) {
+      if (!(await claimPushKey(`FOLLOWUP_${sunday}_${uid}`, { recipient: uid }))) continue;
+      await sendPushNotification({
+        type: "FOLLOWUP_REMINDER",
+        uids: [uid],
+        title: "Follow-ups this week",
+        body: `You have ${count} ${count === 1 ? "contact" : "contacts"} to follow up this week. Due Wednesday 8pm.`,
+        url: "/dashboard/followup",
+      });
+    }
+  } catch (error) {
+    console.error("Cron Error (Follow-up):", error);
   }
 }
 
@@ -143,6 +168,7 @@ export async function sendRosterReminders() {
       const dateLabel = formatTargetSunday(targetSunday);
 
       await sendPushNotification({
+        type: "ROSTER_REMINDER",
         uids: [assignment.assigned_to],
         title: "Sunday Duty Reminder",
         body: `Reminder: You are scheduled for ${dutyLabel} for service tomorrow (${dateLabel}).`,

@@ -1,5 +1,3 @@
-import type { RosterDuty } from "@/types";
-
 /**
  * Something the current user just did that may notify someone else.
  * The server loads the record, checks the caller was allowed to do it,
@@ -7,10 +5,7 @@ import type { RosterDuty } from "@/types";
  */
 export type PushEvent =
   | { type: "TASK_ASSIGNED"; taskId: string }
-  | { type: "TASK_COMPLETED"; taskId: string }
-  | { type: "ROSTER_ASSIGNED"; serviceDate: string; duty: RosterDuty }
-  | { type: "DEVOTION_ASSIGNED"; date: string }
-  | { type: "DEVOTION_NOTES_UPDATED"; date: string };
+  | { type: "TASK_COMPLETED"; taskId: string };
 
 export async function notifyEvent(event: PushEvent): Promise<void> {
   try {

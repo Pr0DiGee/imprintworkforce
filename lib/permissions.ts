@@ -32,6 +32,8 @@ export const PERMISSIONS = {
   manageAllFollowUps: { roles: ["PASTOR", "LEAD_PASTOR", "ADMIN"] },
   /** Workers Check-In page: this week's check-up partners and who has done theirs */
   viewCheckups: { roles: ["ADMIN"] },
+  /** Notifications page: delivery log, on/off switches, custom messages */
+  manageNotifications: { roles: ["ADMIN"] },
 } as const satisfies Record<string, { roles: readonly AppRole[]; departments?: readonly Department[] }>;
 
 export type Permission = keyof typeof PERMISSIONS;

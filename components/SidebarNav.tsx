@@ -14,6 +14,7 @@ import {
   UserCheck,
   Settings,
   HeartHandshake,
+  Bell,
   Sun,
   Moon,
   MapPin
@@ -148,6 +149,17 @@ export function SidebarNav({ user, dots, onNavigate }: { user: UserProfile; dots
           >
             <HeartHandshake size={18} className="shrink-0" />
             Workers Check-In
+          </Link>
+          <Link
+            href="/dashboard/notifications"
+            id="nav-notifications"
+            className={linkClasses("/dashboard/notifications")}
+            style={linkStyle("/dashboard/notifications")}
+            onClick={onNavigate}
+            aria-current={isActive(pathname, "/dashboard/notifications") ? "page" : undefined}
+          >
+            <Bell size={18} className="shrink-0" />
+            Notifications
           </Link>
           <Link
             href="/dashboard/admin"

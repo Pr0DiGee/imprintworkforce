@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { sendTaskReminders, sendDevotionReminders, sendRosterReminders, cleanupExpiredRateLimits } from "@/lib/server-crons";
+import { sendTaskReminders, sendDevotionReminders, sendRosterReminders, sendFollowUpReminders, cleanupExpiredRateLimits } from "@/lib/server-crons";
+import { sendScheduledCustomPushes } from "@/lib/custom-pushes";
 import { createWeeklyCheckups, sendReportReminders } from "@/lib/checkups";
 
 export async function GET(req: Request) {
@@ -30,13 +31,20 @@ export async function GET(req: Request) {
       await sendReportReminders(now);
     }
 
-    if (weekday === "Sat") {
-      // 2. Roster Reminders run ONLY ON SATURDAY (day 6)
-      await sendRosterReminders();
-    } else {
-      // 3. Devotion Reminders run EVERY DAY EXCEPT SATURDAY (days 0-5)
-      await sendDevotionReminders();
+    // Devotion (Mon–Sat): the day before and on the day
+    await sendDevotionReminders(now);
+
+    if (weekday === "Tue") {
+      await sendFollowUpReminders(now);
     }
+
+    if (weekday === "Sat") {
+      // Sunday duty reminders for tomorrow
+      await sendRosterReminders();
+    }
+
+    // Custom messages an admin scheduled for today
+    await sendScheduledCustomPushes(now);
 
     console.log("[CRON] Daily reminders check complete.");
     return NextResponse.json({ success: true, message: "Daily reminders processed." });
